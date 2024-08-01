@@ -9,19 +9,51 @@
             font-family: 'Courier New', Courier, monospace;
             margin: 0;
             padding: 0;
+            background-color: #000;
             color: #fff;
             overflow: hidden;
             position: relative;
-            background-color: #000; /* Default background color */
-            transition: background-color 0.5s ease; /* Smooth background color transition */
+            background-size: cover;
+            animation: flicker 0.5s infinite;
         }
 
-        #game-container {
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        #home-screen, #game-container {
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             position: relative;
+        }
+
+        #home-screen {
+            background: rgba(0, 0, 0, 0.9);
+            flex-direction: column;
+            text-align: center;
+        }
+
+        #home-screen h1 {
+            font-size: 3em;
+            margin-bottom: 30px;
+        }
+
+        #home-screen button {
+            background-color: #555;
+            color: #fff;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 1.2em;
+        }
+
+        #home-screen button:hover {
+            background-color: #777;
         }
 
         #room {
@@ -63,16 +95,25 @@
             width: 100vw;
             height: 100vh;
             background: rgba(255, 0, 0, 0.9);
-            color: #fff;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 5em;
-            font-weight: bold;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
             display: none;
             z-index: 1000;
             animation: jitter 0.1s infinite;
+            flex-direction: column;
+            text-align: center;
+        }
+
+        #rush::before {
+            content: "";
+            background: url('https://static.wikia.nocookie.net/doors-ideas/images/9/99/Robert.png/revision/latest?cb=20230211202711') no-repeat center center;
+            background-size: contain;
+            width: 200px;
+            height: 200px;
+            display: block;
+            margin-bottom: 20px;
         }
 
         @keyframes jitter {
@@ -83,8 +124,8 @@
             100% { transform: translateX(0) rotate(0); }
         }
 
-        /* Styles for Eyes entity */
-        #eyes {
+        /* Styles for Screech entity */
+        #screech {
             position: absolute;
             top: 0;
             left: 0;
@@ -95,20 +136,22 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 5em;
-            font-weight: bold;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
             display: none;
             z-index: 1000;
-            animation: eyesJitter 0.1s infinite;
+            animation: flicker 0.1s infinite;
+            flex-direction: column;
+            text-align: center;
         }
 
-        @keyframes eyesJitter {
-            0% { transform: translateY(0) rotate(0); }
-            25% { transform: translateY(-10px) rotate(-1deg); }
-            50% { transform: translateY(10px) rotate(1deg); }
-            75% { transform: translateY(-10px) rotate(-1deg); }
-            100% { transform: translateY(0) rotate(0); }
+        #screech::before {
+            content: "";
+            background: url('https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/a2cd1f6c-da50-4bbe-89ac-77c7fc19e466/dfl8m8q-8f45145b-4b62-4319-88c7-e053d45813a6.png/v1/fill/w_600,h_800,q_80,strp/screech_by_demongod2022_dfl8m8q-fullview.png') no-repeat center center;
+            background-size: contain;
+            width: 200px;
+            height: 200px;
+            display: block;
+            margin-bottom: 20px;
         }
 
         /* Styles for Dread entity */
@@ -123,51 +166,70 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 5em;
-            font-weight: bold;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
             display: none;
             z-index: 1000;
+            flex-direction: column;
+            text-align: center;
+        }
+
+        #dread::before {
+            content: "";
+            background: url('https://static.wikia.nocookie.net/doors-game/images/c/c9/Dread.png/revision/latest?cb=20230909101425') no-repeat center center;
+            background-size: contain;
+            width: 200px;
+            height: 200px;
+            display: block;
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
-    <div id="rush">RUSH FACE</div>
-    <div id="eyes">EYES</div>
-    <div id="dread">DREAD</div>
-    <div id="game-container">
+    <div id="home-screen">
+        <h1>Doors</h1>
+        <button id="play-button">Play</button>
+        <button id="settings-button">Settings</button>
+        <button id="help-button">Help</button>
+    </div>
+    <div id="game-container" style="display: none;">
         <div id="room">
             <h1 id="room-title">Room 1</h1>
             <button id="next-door">Open Next Door</button>
             <div id="event"></div>
         </div>
     </div>
+    <div id="rush">RUSH!</div>
+    <div id="screech">SCREECH!</div>
+    <div id="dread">DREAD!</div>
     <audio id="rush-sound" src="static/sounds/rush.mp3"></audio>
-    <audio id="eyes-sound" src="static/sounds/eyes.mp3"></audio>
+    <audio id="screech-sound" src="static/sounds/screech.mp3"></audio>
     <audio id="ambient-sound" src="static/sounds/ambient.mp3" loop></audio>
     <audio id="jump-scare-sound" src="static/sounds/jump-scare.mp3"></audio>
-    <audio id="dread-sound" src="static/sounds/dread.mp3"></audio>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const roomTitle = document.getElementById('room-title');
             const eventDiv = document.getElementById('event');
             const nextDoorButton = document.getElementById('next-door');
             const rushDiv = document.getElementById('rush');
-            const eyesDiv = document.getElementById('eyes');
+            const screechDiv = document.getElementById('screech');
             const dreadDiv = document.getElementById('dread');
             const rushSound = document.getElementById('rush-sound');
-            const eyesSound = document.getElementById('eyes-sound');
+            const screechSound = document.getElementById('screech-sound');
             const ambientSound = document.getElementById('ambient-sound');
             const jumpScareSound = document.getElementById('jump-scare-sound');
-            const dreadSound = document.getElementById('dread-sound');
+
+            const homeScreen = document.getElementById('home-screen');
+            const gameContainer = document.getElementById('game-container');
+            const playButton = document.getElementById('play-button');
+            const settingsButton = document.getElementById('settings-button');
+            const helpButton = document.getElementById('help-button');
 
             let roomNumber = 1;
             let floorNumber = 1;
             let doorCount = 0;
             let startTime = Date.now();
             let isGameOver = false;
-            let eyesVisible = false;
-            let dreadVisible = false;
+            let screechVisible = false;
 
             const events = [
                 "You hear a distant scream.",
@@ -180,19 +242,11 @@
                 "You feel an unseen presence.",
                 "The walls seem to close in.",
                 "A chilling breeze brushes your neck.",
-                // Add more events here
             ];
 
             function getRandomEvent() {
                 const randomIndex = Math.floor(Math.random() * events.length);
                 return events[randomIndex];
-            }
-
-            function changeBackgroundColor() {
-                // Change background color between black and shades of grey
-                const shadesOfGrey = ['#000', '#333', '#666', '#999', '#ccc'];
-                const randomShade = shadesOfGrey[Math.floor(Math.random() * shadesOfGrey.length)];
-                document.body.style.backgroundColor = randomShade;
             }
 
             function openNextDoor() {
@@ -207,14 +261,14 @@
                     return;
                 }
 
-                // Check for Eyes trigger
-                if (doorCount % 30 === 0 && doorCount > 0) {
-                    showEyes();
+                // Check for Screech trigger
+                if (doorCount % 20 === 0 && doorCount > 0) {
+                    showScreech();
                 }
 
                 // Check for Dread trigger
                 if (doorCount === 30 && Math.random() < 0.01) {
-                    showDread();
+                    triggerDread();
                     return;
                 }
 
@@ -230,7 +284,15 @@
                 }
 
                 // Spooky effects
-                changeBackgroundColor();
+                if (roomNumber % 10 === 0) {
+                    document.body.style.backgroundColor = '#222';
+                    setTimeout(() => document.body.style.backgroundColor = '#000', 500);
+                }
+
+                if (Math.random() > 0.7) {
+                    document.body.style.backgroundColor = '#000';
+                    setTimeout(() => document.body.style.backgroundColor = '#333', 300);
+                }
 
                 // Transition to Floor 2 after Room 100
                 if (floorNumber === 1 && roomNumber > 100) {
@@ -244,45 +306,104 @@
                 roomTitle.textContent = `Floor ${floorNumber} - Room ${roomNumber}`;
                 eventDiv.textContent = "You have transitioned to a new floor.";
                 
-                // Reset the background color for the new floor
-                changeBackgroundColor();
+                // Optional: Add a special effect or message for the transition
+                document.body.style.backgroundColor = '#444';
+                setTimeout(() => document.body.style.backgroundColor = '#000', 500);
             }
 
             function triggerRush() {
-                rushDiv.style.display = 'flex';
-                rushSound.play();
+                isGameOver = true;
+                rushDiv.style.display = 'flex'; // Show Rush entity
+                rushSound.play(); // Play Rush sound
                 setTimeout(() => {
-                    rushDiv.style.display = 'none';
-                }, 2000); // Show Rush for 2 seconds
-                gameOver();
+                    rushDiv.style.display = 'none'; // Hide Rush after a short period
+                    nextDoorButton.disabled = true; // Disable button
+                }, 2000); // Show for 2 seconds
             }
 
-            function showEyes() {
-                eyesDiv.style.display = 'flex';
-                eyesSound.play();
+            function showScreech() {
+                if (isGameOver) return;
+                screechVisible = true;
+                screechDiv.style.display = 'flex'; // Show Screech entity
+                screechSound.play(); // Play Screech sound
+
+                // Add event listener for clicking the Screech face
+                document.addEventListener('click', handleScreechClick);
+
+                // Hide Screech after 5 seconds if not clicked
                 setTimeout(() => {
-                    eyesDiv.style.display = 'none';
-                }, 2000); // Show Eyes for 2 seconds
+                    if (screechVisible) {
+                        gameOver();
+                    }
+                }, 5000); // Show for 5 seconds
             }
 
-            function showDread() {
-                dreadDiv.style.display = 'flex';
-                dreadSound.play();
+            function handleScreechClick(event) {
+                const rect = screechDiv.getBoundingClientRect();
+                const x = event.clientX;
+                const y = event.clientY;
+
+                if (
+                    x >= rect.left &&
+                    x <= rect.right &&
+                    y >= rect.top &&
+                    y <= rect.bottom
+                ) {
+                    screechVisible = false;
+                    screechDiv.style.display = 'none'; // Hide Screech
+                    document.removeEventListener('click', handleScreechClick);
+                }
+            }
+
+            function triggerDread() {
+                isGameOver = true;
+                dreadDiv.style.display = 'flex'; // Show Dread entity
                 setTimeout(() => {
-                    dreadDiv.style.display = 'none';
-                }, 2000); // Show Dread for 2 seconds
-                gameOver();
+                    dreadDiv.style.display = 'none'; // Hide Dread after a short period
+                    nextDoorButton.disabled = true; // Disable button
+                }, 2000); // Show for 2 seconds
             }
 
             function gameOver() {
                 isGameOver = true;
-                nextDoorButton.disabled = true;
-                eventDiv.textContent = "Game Over!";
-                jumpScareSound.play();
+                screechDiv.style.display = 'none'; // Hide Screech immediately
+                dreadDiv.style.display = 'none'; // Hide Dread immediately
+                nextDoorButton.disabled = true; // Disable button
+                jumpScareSound.play(); // Play jump scare sound
+                alert('You have been caught by Screech!');
             }
 
-            nextDoorButton.addEventListener('click', openNextDoor);
-            ambientSound.play();
+            function startGame() {
+                homeScreen.style.display = 'none';
+                gameContainer.style.display = 'flex';
+                ambientSound.play(); // Play ambient sound when game starts
+            }
+
+            function showSettings() {
+                alert('Settings screen is not implemented yet.'); // Placeholder for settings
+            }
+
+            function showHelp() {
+                alert('Help screen is not implemented yet.'); // Placeholder for help
+            }
+
+            playButton.addEventListener('click', startGame);
+            settingsButton.addEventListener('click', showSettings);
+            helpButton.addEventListener('click', showHelp);
+
+            if (nextDoorButton) {
+                nextDoorButton.addEventListener('click', () => {
+                    if (floorNumber === 1 && roomNumber <= 100) {
+                        openNextDoor(); // Proceed normally
+                    } else if (floorNumber === 2 && roomNumber <= 100) {
+                        openNextDoor(); // Continue in Floor 2
+                    } else if (floorNumber === 2 && roomNumber > 100) {
+                        roomTitle.textContent = 'You have escaped!';
+                        eventDiv.textContent = 'Congratulations, you have reached the end!';
+                        nextDoorButton.disabled = true;
+                    }
+                });
+            }
         });
     </script>
 </body>
