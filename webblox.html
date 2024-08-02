@@ -99,6 +99,17 @@
             flex-grow: 1;
             border: 1px solid #ccc;
         }
+
+        #editor-message {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -111,7 +122,6 @@
             <button onclick="login()">Login</button>
             <div class="link" onclick="showSignUp()">Don't have an account? Sign up</div>
             <div class="link" onclick="enterAsGuest()">Enter as Guest</div>
-            <button onclick="goToEditor()">Go to Game Editor</button>
         </div>
     </div>
 
@@ -124,6 +134,7 @@
             <button onclick="changeShape()">Change Shape</button>
         </div>
         <canvas id="gameCanvas"></canvas>
+        <div id="editor-message"></div>
     </div>
 
     <script>
@@ -139,7 +150,7 @@
             loggedInUser = 'Guest';
             localStorage.setItem('loggedInUser', 'Guest');
             alert('Entered as Guest');
-            goToEditor();
+            showError('Guests cannot access the Game Editor.');
         }
 
         function login() {
@@ -157,8 +168,21 @@
         }
 
         function goToEditor() {
+            if (loggedInUser === 'Guest') {
+                showError('Guests cannot access the Game Editor.');
+                return;
+            }
             document.getElementById('homepage-container').style.display = 'none';
             document.getElementById('editor-container').style.display = 'flex';
+        }
+
+        function showError(message) {
+            const messageDiv = document.getElementById('editor-message');
+            messageDiv.textContent = message;
+            messageDiv.style.display = 'block';
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 3000);
         }
 
         // Game Editor
@@ -219,6 +243,10 @@
         }
 
         canvas.addEventListener('mousedown', (e) => {
+            if (loggedInUser === 'Guest') {
+                showError('Guests cannot add blocks.');
+                return;
+            }
             const x = e.clientX;
             const y = e.clientY;
             const block = blocks.find(b => x >= b.x && x <= b.x + b.width && y >= b.y && y <= b.y + b.height);
