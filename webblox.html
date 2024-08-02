@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Webblox Game Maker</title>
+    <title>Webblox</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -14,43 +14,51 @@
             align-items: center;
             background-color: #f0f0f0;
         }
-        #editor-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
             margin-top: 20px;
         }
-        #game-canvas {
-            border: 1px solid #ccc;
-            background-color: #e0e0e0;
-            position: relative;
-        }
-        .toolbox {
-            margin: 10px;
-        }
-        .toolbox button {
-            margin: 5px;
+        .container button, .container input {
+            margin: 10px 0;
             padding: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        button {
             background-color: #4CAF50;
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
         }
-        .toolbox button:hover {
+        button:hover {
             background-color: #45a049;
         }
-        .toolbox input {
-            margin: 5px;
-            padding: 10px;
-            width: 100px;
-            box-sizing: border-box;
+        input {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        #game-canvas {
+            width: 600px;
+            height: 400px;
+            border: 1px solid #ccc;
+            background-color: #e0e0e0;
+            position: relative;
+            margin-top: 20px;
         }
         .block {
             position: absolute;
             background-color: #4CAF50;
             border: 1px solid #000;
             cursor: move;
+        }
+        .toolbox {
+            margin-top: 10px;
         }
         #test-button {
             margin-top: 20px;
@@ -64,27 +72,161 @@
         #test-button:hover {
             background-color: #45a049;
         }
+        #editor-container {
+            display: none;
+        }
     </style>
 </head>
 <body>
-    <div id="editor-container">
+    <div class="container" id="login-container">
+        <h2>Login to Webblox</h2>
+        <input type="text" id="login-username" placeholder="Username">
+        <input type="password" id="login-password" placeholder="Password">
+        <button onclick="login()">Login</button>
+        <div class="link" onclick="showSignUp()">Don't have an account? Sign up</div>
+        <div class="link" onclick="enterAsGuest()">Enter as Guest</div>
+    </div>
+
+    <div class="container" id="signup-container" style="display: none;">
+        <h2>Sign Up for Webblox</h2>
+        <input type="text" id="signup-username" placeholder="Username">
+        <input type="password" id="signup-password" placeholder="Password">
+        <button onclick="signUp()">Sign Up</button>
+        <div class="link" onclick="showLogin()">Already have an account? Login</div>
+    </div>
+
+    <div class="container" id="welcome-container" style="display: none;">
+        <h2 id="welcome-message"></h2>
+        <button onclick="openAccountSettings()">Account Settings</button>
+        <button onclick="openGameEditor()">Game Maker</button>
+        <button onclick="logout()">Logout</button>
+    </div>
+
+    <div class="container" id="account-settings" style="display: none;">
+        <h2>Account Settings</h2>
+        <input type="text" id="new-name" placeholder="New Name">
+        <input type="number" id="new-age" placeholder="New Age">
+        <input type="password" id="new-password" placeholder="New Password">
+        <button onclick="updateAccountSettings()">Update Settings</button>
+        <button onclick="closeAccountSettings()">Close</button>
+    </div>
+
+    <div class="container" id="editor-container">
         <h2>Game Maker</h2>
         <div class="toolbox">
             <button onclick="addBlock()">Add Block</button>
-            <button onclick="testGame()">Test Game</button>
             <button onclick="clearBlocks()">Clear Blocks</button>
             <input type="color" id="color-picker" onchange="changeColor(event)" title="Change Block Color">
             <input type="number" id="width-picker" placeholder="Width" onchange="changeSize()" title="Change Block Width">
             <input type="number" id="height-picker" placeholder="Height" onchange="changeSize()" title="Change Block Height">
         </div>
-        <div id="game-canvas" style="width: 600px; height: 400px;">
-        </div>
+        <div id="game-canvas"></div>
         <button id="test-button" onclick="testGame()">Test Game</button>
     </div>
 
     <script>
+        let users = JSON.parse(localStorage.getItem('users')) || {};
+        let loggedInUser = localStorage.getItem('loggedInUser') || null;
         let selectedBlock = null;
         let blocks = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (loggedInUser) {
+                document.getElementById('login-container').style.display = 'none';
+                document.getElementById('welcome-message').innerText = `Welcome to Webblox, ${loggedInUser}!`;
+                document.getElementById('welcome-container').style.display = 'flex';
+            } else {
+                document.getElementById('login-container').style.display = 'block';
+            }
+        });
+
+        function showLogin() {
+            document.getElementById('signup-container').style.display = 'none';
+            document.getElementById('login-container').style.display = 'block';
+        }
+
+        function showSignUp() {
+            document.getElementById('login-container').style.display = 'none';
+            document.getElementById('signup-container').style.display = 'block';
+        }
+
+        function enterAsGuest() {
+            loggedInUser = 'Guest';
+            localStorage.setItem('loggedInUser', 'Guest');
+            document.getElementById('login-container').style.display = 'none';
+            document.getElementById('welcome-message').innerText = 'Welcome to Webblox, Guest!';
+            document.getElementById('welcome-container').style.display = 'flex';
+        }
+
+        function login() {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+
+            if (users[username] && users[username].password === password) {
+                loggedInUser = username;
+                localStorage.setItem('loggedInUser', username);
+                document.getElementById('login-container').style.display = 'none';
+                document.getElementById('welcome-message').innerText = `Welcome to Webblox, ${username}!`;
+                document.getElementById('welcome-container').style.display = 'flex';
+            } else {
+                alert('Invalid username or password');
+            }
+        }
+
+        function signUp() {
+            const username = document.getElementById('signup-username').value;
+            const password = document.getElementById('signup-password').value;
+
+            if (username && password) {
+                if (!users[username]) {
+                    users[username] = { password: password, name: username, age: null };
+                    localStorage.setItem('users', JSON.stringify(users));
+                    alert('Sign up successful! Please log in.');
+                    showLogin();
+                } else {
+                    alert('Username already exists');
+                }
+            } else {
+                alert('Please enter both username and password');
+            }
+        }
+
+        function openAccountSettings() {
+            if (loggedInUser !== 'Guest') {
+                document.getElementById('welcome-container').style.display = 'none';
+                document.getElementById('account-settings').style.display = 'block';
+            } else {
+                alert('Guests cannot change account settings');
+            }
+        }
+
+        function updateAccountSettings() {
+            const newName = document.getElementById('new-name').value;
+            const newAge = document.getElementById('new-age').value;
+            const newPassword = document.getElementById('new-password').value;
+
+            if (loggedInUser && users[loggedInUser]) {
+                if (newName) users[loggedInUser].name = newName;
+                if (newAge) users[loggedInUser].age = newAge;
+                if (newPassword) users[loggedInUser].password = newPassword;
+
+                localStorage.setItem('users', JSON.stringify(users));
+                alert('Account settings updated successfully');
+                closeAccountSettings();
+            } else {
+                alert('No user is logged in');
+            }
+        }
+
+        function closeAccountSettings() {
+            document.getElementById('account-settings').style.display = 'none';
+            document.getElementById('welcome-container').style.display = 'flex';
+        }
+
+        function openGameEditor() {
+            document.getElementById('welcome-container').style.display = 'none';
+            document.getElementById('editor-container').style.display = 'flex';
+        }
 
         function addBlock() {
             const block = document.createElement('div');
@@ -157,6 +299,13 @@
             });
             doc.write('</body></html>');
             doc.close();
+        }
+
+        function logout() {
+            localStorage.removeItem('loggedInUser');
+            document.getElementById('welcome-container').style.display = 'none';
+            document.getElementById('login-container').style.display = 'block';
+            loggedInUser = null;
         }
     </script>
 </body>
