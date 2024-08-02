@@ -14,12 +14,6 @@
             overflow: hidden;
             position: relative;
             background-size: cover;
-            animation: flicker 0.5s infinite;
-        }
-
-        @keyframes flicker {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
         }
 
         #home-screen, #game-container {
@@ -27,44 +21,50 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            position: relative;
+            position: absolute;
+            width: 100%;
+            top: 0;
+            left: 0;
+            background-color: rgba(0, 0, 0, 0.8);
         }
 
         #home-screen {
-            background: rgba(0, 0, 0, 0.9);
+            display: flex;
             flex-direction: column;
-            text-align: center;
         }
 
         #home-screen h1 {
             font-size: 3em;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
         #home-screen button {
             background-color: #555;
             color: #fff;
             border: none;
-            padding: 15px 30px;
+            padding: 15px;
             border-radius: 5px;
             cursor: pointer;
-            margin: 10px;
             font-size: 1.2em;
+            margin: 10px;
         }
 
         #home-screen button:hover {
             background-color: #777;
         }
 
+        #game-container {
+            display: none;
+            flex-direction: column;
+            text-align: center;
+        }
+
         #room {
             background-color: rgba(34, 34, 34, 0.9);
             padding: 20px;
             border-radius: 8px;
-            text-align: center;
             width: 300px;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
-            position: relative;
-            z-index: 1;
         }
 
         #next-door {
@@ -74,8 +74,6 @@
             padding: 10px;
             border-radius: 5px;
             cursor: pointer;
-            position: relative;
-            z-index: 1;
         }
 
         #next-door:hover {
@@ -87,23 +85,24 @@
             font-style: italic;
         }
 
-        /* Styles for Rush entity */
-        #rush {
+        #rush, #dread, #void {
             position: absolute;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(255, 0, 0, 0.9);
-            display: flex;
+            display: none;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
-            display: none;
-            z-index: 1000;
-            animation: jitter 0.1s infinite;
-            flex-direction: column;
             text-align: center;
+            z-index: 1000;
+            color: #fff;
+        }
+
+        #rush {
+            background: rgba(255, 0, 0, 0.9);
+            animation: jitter 0.1s infinite;
         }
 
         #rush::before {
@@ -112,8 +111,6 @@
             background-size: contain;
             width: 200px;
             height: 200px;
-            display: block;
-            margin-bottom: 20px;
         }
 
         @keyframes jitter {
@@ -124,53 +121,8 @@
             100% { transform: translateX(0) rotate(0); }
         }
 
-        /* Styles for Screech entity */
-        #screech {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.9);
-            color: #fff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
-            display: none;
-            z-index: 1000;
-            animation: flicker 0.1s infinite;
-            flex-direction: column;
-            text-align: center;
-        }
-
-        #screech::before {
-            content: "";
-            background: url('https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/a2cd1f6c-da50-4bbe-89ac-77c7fc19e466/dfl8m8q-8f45145b-4b62-4319-88c7-e053d45813a6.png/v1/fill/w_600,h_800,q_80,strp/screech_by_demongod2022_dfl8m8q-fullview.png') no-repeat center center;
-            background-size: contain;
-            width: 200px;
-            height: 200px;
-            display: block;
-            margin-bottom: 20px;
-        }
-
-        /* Styles for Dread entity */
         #dread {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
             background: rgba(0, 0, 0, 0.9);
-            color: #fff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
-            display: none;
-            z-index: 1000;
-            flex-direction: column;
-            text-align: center;
         }
 
         #dread::before {
@@ -179,57 +131,61 @@
             background-size: contain;
             width: 200px;
             height: 200px;
-            display: block;
-            margin-bottom: 20px;
+        }
+
+        #void {
+            background: rgba(0, 0, 0, 0.9);
+        }
+
+        #void::before {
+            content: "VOID";
+            font-size: 48px;
+            font-weight: bold;
+            color: red;
         }
     </style>
 </head>
 <body>
     <div id="home-screen">
-        <h1>Doors</h1>
+        <h1>Doors - A Horror Game</h1>
         <button id="play-button">Play</button>
-        <button id="settings-button">Settings</button>
         <button id="help-button">Help</button>
     </div>
-    <div id="game-container" style="display: none;">
+    <div id="game-container">
         <div id="room">
             <h1 id="room-title">Room 1</h1>
             <button id="next-door">Open Next Door</button>
             <div id="event"></div>
         </div>
+        <div id="rush">RUSH!</div>
+        <div id="dread">DREAD!</div>
+        <div id="void"></div>
     </div>
-    <div id="rush">RUSH!</div>
-    <div id="screech">SCREECH!</div>
-    <div id="dread">DREAD!</div>
     <audio id="rush-sound" src="static/sounds/rush.mp3"></audio>
-    <audio id="screech-sound" src="static/sounds/screech.mp3"></audio>
     <audio id="ambient-sound" src="static/sounds/ambient.mp3" loop></audio>
     <audio id="jump-scare-sound" src="static/sounds/jump-scare.mp3"></audio>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const homeScreen = document.getElementById('home-screen');
+            const gameContainer = document.getElementById('game-container');
+            const playButton = document.getElementById('play-button');
+            const helpButton = document.getElementById('help-button');
             const roomTitle = document.getElementById('room-title');
             const eventDiv = document.getElementById('event');
             const nextDoorButton = document.getElementById('next-door');
             const rushDiv = document.getElementById('rush');
-            const screechDiv = document.getElementById('screech');
             const dreadDiv = document.getElementById('dread');
+            const voidDiv = document.getElementById('void');
             const rushSound = document.getElementById('rush-sound');
-            const screechSound = document.getElementById('screech-sound');
             const ambientSound = document.getElementById('ambient-sound');
             const jumpScareSound = document.getElementById('jump-scare-sound');
-
-            const homeScreen = document.getElementById('home-screen');
-            const gameContainer = document.getElementById('game-container');
-            const playButton = document.getElementById('play-button');
-            const settingsButton = document.getElementById('settings-button');
-            const helpButton = document.getElementById('help-button');
 
             let roomNumber = 1;
             let floorNumber = 1;
             let doorCount = 0;
             let startTime = Date.now();
             let isGameOver = false;
-            let screechVisible = false;
+            let lastRoomTime = Date.now();
 
             const events = [
                 "You hear a distant scream.",
@@ -254,16 +210,18 @@
 
                 const currentTime = Date.now();
                 const elapsedTime = (currentTime - startTime) / 1000; // in seconds
+                const timeInRoom = (currentTime - lastRoomTime) / 1000; // in seconds
+
+                // Check for Void trigger
+                if (timeInRoom > 60) {
+                    triggerVoid();
+                    return;
+                }
 
                 // Check for Rush trigger
                 if (doorCount >= 10 && elapsedTime <= 10) {
                     triggerRush();
                     return;
-                }
-
-                // Check for Screech trigger
-                if (doorCount % 20 === 0 && doorCount > 0) {
-                    showScreech();
                 }
 
                 // Check for Dread trigger
@@ -298,6 +256,8 @@
                 if (floorNumber === 1 && roomNumber > 100) {
                     transitionToFloor(2);
                 }
+
+                lastRoomTime = Date.now();
             }
 
             function transitionToFloor(newFloor) {
@@ -321,40 +281,6 @@
                 }, 2000); // Show for 2 seconds
             }
 
-            function showScreech() {
-                if (isGameOver) return;
-                screechVisible = true;
-                screechDiv.style.display = 'flex'; // Show Screech entity
-                screechSound.play(); // Play Screech sound
-
-                // Add event listener for clicking the Screech face
-                document.addEventListener('click', handleScreechClick);
-
-                // Hide Screech after 5 seconds if not clicked
-                setTimeout(() => {
-                    if (screechVisible) {
-                        gameOver();
-                    }
-                }, 5000); // Show for 5 seconds
-            }
-
-            function handleScreechClick(event) {
-                const rect = screechDiv.getBoundingClientRect();
-                const x = event.clientX;
-                const y = event.clientY;
-
-                if (
-                    x >= rect.left &&
-                    x <= rect.right &&
-                    y >= rect.top &&
-                    y <= rect.bottom
-                ) {
-                    screechVisible = false;
-                    screechDiv.style.display = 'none'; // Hide Screech
-                    document.removeEventListener('click', handleScreechClick);
-                }
-            }
-
             function triggerDread() {
                 isGameOver = true;
                 dreadDiv.style.display = 'flex'; // Show Dread entity
@@ -364,32 +290,43 @@
                 }, 2000); // Show for 2 seconds
             }
 
+            function triggerVoid() {
+                isGameOver = true;
+                voidDiv.style.display = 'flex'; // Show Void entity
+                setTimeout(() => {
+                    voidDiv.style.display = 'none'; // Hide Void after a short period
+                    nextDoorButton.disabled = true; // Disable button
+                }, 2000); // Show for 2 seconds
+            }
+
             function gameOver() {
                 isGameOver = true;
-                screechDiv.style.display = 'none'; // Hide Screech immediately
                 dreadDiv.style.display = 'none'; // Hide Dread immediately
+                voidDiv.style.display = 'none'; // Hide Void immediately
                 nextDoorButton.disabled = true; // Disable button
                 jumpScareSound.play(); // Play jump scare sound
-                alert('You have been caught by Screech!');
+                alert('Game Over!');
             }
 
-            function startGame() {
+            function showHomeScreen() {
+                homeScreen.style.display = 'flex';
+                gameContainer.style.display = 'none';
+                ambientSound.pause(); // Stop ambient sound
+            }
+
+            function showGameScreen() {
                 homeScreen.style.display = 'none';
                 gameContainer.style.display = 'flex';
-                ambientSound.play(); // Play ambient sound when game starts
+                ambientSound.play(); // Start ambient sound
             }
 
-            function showSettings() {
-                alert('Settings screen is not implemented yet.'); // Placeholder for settings
-            }
+            playButton.addEventListener('click', () => {
+                showGameScreen();
+            });
 
-            function showHelp() {
-                alert('Help screen is not implemented yet.'); // Placeholder for help
-            }
-
-            playButton.addEventListener('click', startGame);
-            settingsButton.addEventListener('click', showSettings);
-            helpButton.addEventListener('click', showHelp);
+            helpButton.addEventListener('click', () => {
+                alert("In this game, you will explore rooms, avoid entities, and survive as long as possible. Here's what you need to know:\n\nRush: Spawns every 10 doors. Rush will chase you, and you need to hide or escape quickly.\nDread: May appear at door 30 with a 1% chance, causing immediate game over.\nVoid: Triggers if you stay in a room for more than 60 seconds.\n\nGood luck!");
+            });
 
             if (nextDoorButton) {
                 nextDoorButton.addEventListener('click', () => {

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChattR</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #f5f5f5;
+            overflow: hidden;
+        }
+
+        #app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+            margin: 20px;
+        }
+
+        #chat-container {
+            display: flex;
+            flex-direction: column;
+            background-color: #fff;
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            flex: 1;
+        }
+
+        #messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .message img {
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            margin-right: 10px;
+        }
+
+        .message-content {
+            background-color: #eee;
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 80%;
+        }
+
+        #input-container {
+            display: flex;
+            align-items: center;
+            border-top: 1px solid #ddd;
+            background-color: #fafafa;
+            padding: 10px;
+        }
+
+        #text-input {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin-right: 10px;
+            outline: none;
+        }
+
+        #send-button {
+            border: none;
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #send-button:hover {
+            background-color: #0056b3;
+        }
+
+        #emote-button {
+            border: none;
+            background-color: #f1f1f1;
+            cursor: pointer;
+            font-size: 20px;
+            margin-left: 10px;
+        }
+
+        #emote-selector {
+            position: absolute;
+            bottom: 60px;
+            left: 20px;
+            display: none;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            padding: 5px;
+        }
+
+        #emote-selector img {
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        #settings {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        #background-selector {
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="settings">
+        <select id="background-selector">
+            <option value="#f5f5f5">Default</option>
+            <option value="#e0f7fa">Light Blue</option>
+            <option value="#fce4ec">Light Pink</option>
+            <!-- Add more color options here -->
+        </select>
+    </div>
+
+    <div id="app-container">
+        <div id="chat-container">
+            <div id="messages"></div>
+            <div id="input-container">
+                <input type="text" id="text-input" placeholder="Type a message..." />
+                <button id="send-button">Send</button>
+                <button id="emote-button">Emote</button>
+            </div>
+            <div id="emote-selector">
+                <!-- Existing Emotes -->
+                <img src="https://cdn1.dotesports.com/wp-content/uploads/2022/08/08151413/PepeHands-800x450.jpg" alt="PepeHands" title="PepeHands" />
+                <img src="https://lh5.googleusercontent.com/proxy/fBtGufNCnJ52HJBa4KIR_zlWRupMyHGfQkLmh64ecf9Ni1tJVsWQN-rRMdJbcxfyMQ2yhm82XdI3K5Fyn35Bz2z_guzbKzZvU6WZ4pWyTcbQ7gLkyIp6XZwoMTByDQOP873pm6OZkWXAZiLTLRIQuFBlPEnBWg=w1200-h630-p-k-no-nu" alt="Emote 2" title="Emote 2" />
+                <img src="https://www.vhv.rs/dpng/d/494-4940951_extremely-rare-pepe-frog-meme-hd-png-download.png" alt="Rare Pepe" title="Rare Pepe" />
+                <img src="https://www.stickpng.com/assets/images/58486a72849cf46a2a931338.png" alt="Another Pepe" title="Another Pepe" />
+                <!-- New Emotes -->
+                <img src="https://img.pagecloud.com/t6XiW3lmo3hVrFTPodQq8QupY0k=/1000x0/filters:no_upscale()/basic-guide-to-twitchtv/Lul-f988b.jpg" alt="Lul" title="Lul" />
+                <img src="https://i.pinimg.com/originals/02/6d/79/026d796451ea2b02ec951af751cc25a2.gif" alt="Funny Emote" title="Funny Emote" />
+                <img src="https://uploads.dailydot.com/2023/11/Elmo-Fire.jpg?auto=compress&fm=pjpg" alt="Elmo Fire" title="Elmo Fire" />
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const messages = document.getElementById('messages');
+            const textInput = document.getElementById('text-input');
+            const sendButton = document.getElementById('send-button');
+            const emoteButton = document.getElementById('emote-button');
+            const emoteSelector = document.getElementById('emote-selector');
+            const backgroundSelector = document.getElementById('background-selector');
+
+            function addMessage(content, isEmote = false, isAI = false) {
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('message');
+                messageDiv.innerHTML = `<div class="message-content">${isEmote ? `<img src="${content}" alt="emote" />` : content}</div>`;
+                messages.appendChild(messageDiv);
+                if (isAI) {
+                    messageDiv.classList.add('ai-message');
+                }
+                messages.scrollTop = messages.scrollHeight;
+            }
+
+            function aiResponse(message) {
+                const responses = {
+                    "hello": "Hello! How can I assist you today?",
+                    "how are you": "I'm just a program, so I don't have feelings, but I'm here to help you!",
+                    "what's your name": "I'm an AI chatbot created to assist you.",
+                    "bye": "Goodbye! Have a great day!"
+
+                };
+
+                const lowerCaseMessage = message.toLowerCase();
+                for (const key in responses) {
+                    if (lowerCaseMessage.includes(key)) {
+                        return responses[key];
+                    }
+                }
+
+                // Generic response for any other message
+                return "I'm here to chat with you! How can I assist?";
+            }
+
+            sendButton.addEventListener('click', () => {
+                const messageText = textInput.value.trim();
+                if (messageText) {
+                    addMessage(messageText);
+                    const response = aiResponse(messageText);
+                    setTimeout(() => {
+                        addMessage(response, false, true);
+                    }, 1000);
+                    textInput.value = '';
+                }
+            });
+
+            textInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    sendButton.click();
+                }
+            });
+
+            emoteButton.addEventListener('click', () => {
+                emoteSelector.style.display = emoteSelector.style.display === 'none' ? 'block' : 'none';
+            });
+
+            emoteSelector.addEventListener('click', (e) => {
+                if (e.target.tagName === 'IMG') {
+                    addMessage(e.target.src, true);
+                    emoteSelector.style.display = 'none';
+                }
+            });
+
+            backgroundSelector.addEventListener('change', (e) => {
+                document.body.style.backgroundColor = e.target.value;
+            });
+        });
+    </script>
+</body>
+</html>

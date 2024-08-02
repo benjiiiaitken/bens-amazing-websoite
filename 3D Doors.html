@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Park Chase Game</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+        #game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+            color: #fff;
+            z-index: 1000;
+        }
+        #restart-button {
+            background-color: #555;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #restart-button:hover {
+            background-color: #777;
+        }
+        #hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            z-index: 1000;
+        }
+        #hud h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        #hud p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-over">
+        <h1>Game Over</h1>
+        <button id="restart-button">Restart</button>
+    </div>
+    <div id="hud">
+        <h1>Park Chase Game</h1>
+        <p id="player-status">Player Status: Safe</p>
+        <p id="score">Score: 0</p>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/GLTFLoader.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/AnimationMixer.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/OrbitControls.min.js"></script>
+    <script>
+        let scene, camera, renderer, player, chaser, obstacles, mixer;
+        let isGameOver = false;
+        let score = 0;
+        const playerSpeed = 0.1;
+        const chaserSpeed = 0.05;
+        const clock = new THREE.Clock();
+
+        init();
+        animate();
+
+        function init() {
+            // Scene setup
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Camera controls
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.25;
+            controls.enableZoom = true;
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0x404040); // Soft white light
+            scene.add(ambientLight);
+
+            const pointLight = new THREE.PointLight(0xffffff, 1, 100);
+            pointLight.position.set(10, 10, 10);
+            scene.add(pointLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            directionalLight.position.set(1, 1, 1).normalize();
+            scene.add(directionalLight);
+
+            // Load park environment
+            const loader = new THREE.GLTFLoader();
+            loader.load('path/to/detailed-park-model.glb', function (gltf) {
+                scene.add(gltf.scene);
+                gltf.scene.scale.set(5, 5, 5); // Adjust scale as needed
+                gltf.scene.position.set(0, 0, 0); // Ensure the scene is centered
+                gltf.scene.traverse(child => {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                    }
+                });
+            }, undefined, function (error) {
+                console.error('Error loading park model:', error);
+            });
+
+            // Load player model
+            loader.load('path/to/detailed-player-model.glb', function (gltf) {
+                player = gltf.scene;
+                player.position.set(0, 0, 0);
+                mixer = new THREE.AnimationMixer(player);
+                gltf.animations.forEach(clip => mixer.clipAction(clip).play());
+                scene.add(player);
+            }, undefined, function (error) {
+                console.error('Error loading player model:', error);
+            });
+
+            // Load chaser model
+            loader.load('path/to/detailed-chaser-model.glb', function (gltf) {
+                chaser = gltf.scene;
+                chaser.position.set(Math.random() * 10 - 5, 0, Math.random() * 10 - 5);
+                mixer = new THREE.AnimationMixer(chaser);
+                gltf.animations.forEach(clip => mixer.clipAction(clip).play());
+                scene.add(chaser);
+            }, undefined, function (error) {
+                console.error('Error loading chaser model:', error);
+            });
+
+            // Obstacles setup
+            obstacles = [];
+            for (let i = 0; i < 5; i++) {
+                const geometry = new THREE.BoxGeometry(1, 1, 1);
+                const material = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.position.set(Math.random() * 10 - 5, 0, Math.random() * 10 - 5);
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+                obstacles.push(mesh);
+                scene.add(mesh);
+            }
+
+            // Camera position
+            camera.position.z = 10;
+            camera.position.y = 5;
+            camera.position.x = 5;
+            camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+            // Event listeners for movement
+            document.addEventListener('keydown', onKeyDown);
+            document.addEventListener('keyup', onKeyUp);
+
+            // Handle window resize
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function onKeyDown(event) {
+            if (event.key === 'ArrowUp') player.position.z -= playerSpeed;
+            if (event.key === 'ArrowDown') player.position.z += playerSpeed;
+            if (event.key === 'ArrowLeft') player.position.x -= playerSpeed;
+            if (event.key === 'ArrowRight') player.position.x += playerSpeed;
+        }
+
+        function onKeyUp(event) {
+            // Add any key up functionality if needed
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (!isGameOver) {
+                const delta = clock.getDelta();
+
+                // Update chaser position
+                const direction = new THREE.Vector3().subVectors(player.position, chaser.position).normalize();
+                chaser.position.add(direction.multiplyScalar(chaserSpeed));
+
+                // Update animations
+                if (mixer) mixer.update(delta);
+
+                // Check for collisions
+                if (detectCollision(player, chaser)) {
+                    gameOver();
+                }
+
+                // Update HUD
+                document.getElementById('score').textContent = `Score: ${score}`;
+
+                // Render scene
+                renderer.render(scene, camera);
+            }
+        }
+
+        function detectCollision(object1, object2) {
+            const box1 = new THREE.Box3().setFromObject(object1);
+            const box2 = new THREE.Box3().setFromObject(object2);
+            return box1.intersectsBox(box2);
+        }
+
+        function gameOver() {
+            isGameOver = true;
+            document.getElementById('game-over').style.display = 'block';
+        }
+
+        document.getElementById('restart-button').addEventListener('click', function () {
+            isGameOver = false;
+            document.getElementById('game-over').style.display = 'none';
+
+            // Reset player and chaser positions
+            player.position.set(0, 0, 0);
+            chaser.position.set(Math.random() * 10 - 5, 0, Math.random() * 10 - 5);
+
+            // Restart sounds
+            ambientSound.play();
+            chaserSound.play();
+        });
+    </script>
+</body>
+</html>
