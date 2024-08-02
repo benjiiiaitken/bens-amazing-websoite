@@ -22,7 +22,7 @@
             width: 300px;
             text-align: center;
         }
-        input, button, textarea {
+        input, button {
             margin: 10px 0;
             padding: 10px;
             width: 100%;
@@ -44,13 +44,7 @@
             text-align: center;
             margin-top: 10px;
         }
-        #welcome-container {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-        }
-        #account-settings, #upload-container, #published-games {
+        #welcome-container, #account-settings, #published-games {
             display: none;
             margin-top: 20px;
         }
@@ -82,7 +76,6 @@
     <div class="container" id="welcome-container">
         <h2 id="welcome-message"></h2>
         <button onclick="openAccountSettings()">Account Settings</button>
-        <button onclick="openUploadContainer()">Publish Game</button>
         <button onclick="viewPublishedGames()">View Published Games</button>
         <button onclick="logout()">Logout</button>
     </div>
@@ -93,13 +86,6 @@
         <input type="password" id="new-password" placeholder="New Password">
         <button onclick="updateAccountSettings()">Update Settings</button>
         <button onclick="closeAccountSettings()">Close</button>
-    </div>
-    <div class="container" id="upload-container">
-        <h2>Publish Your Game</h2>
-        <textarea id="game-html" rows="10" placeholder="Paste your HTML code here"></textarea>
-        <input type="text" id="game-name" placeholder="Game Name">
-        <button onclick="publishGame()">Publish Game</button>
-        <button onclick="closeUploadContainer()">Close</button>
     </div>
     <div class="container" id="published-games">
         <h2>Published Games</h2>
@@ -207,52 +193,6 @@
             document.getElementById('welcome-container').style.display = 'flex';
         }
 
-        function openUploadContainer() {
-            if (loggedInUser !== 'Guest') {
-                document.getElementById('welcome-container').style.display = 'none';
-                document.getElementById('upload-container').style.display = 'block';
-            } else {
-                alert('Guests cannot publish games');
-            }
-        }
-
-        function sanitizeHTML(html) {
-            const template = document.createElement('template');
-            template.innerHTML = html;
-
-            const scripts = template.content.querySelectorAll('script');
-            scripts.forEach(script => script.remove());
-
-            const elementsWithEvents = template.content.querySelectorAll('*');
-            elementsWithEvents.forEach(element => {
-                element.removeAttribute('onload');
-                element.removeAttribute('onclick');
-            });
-
-            return template.innerHTML;
-        }
-
-        function publishGame() {
-            const gameHtml = document.getElementById('game-html').value;
-            const gameName = document.getElementById('game-name').value;
-
-            if (gameHtml && gameName) {
-                const sanitizedHtml = sanitizeHTML(gameHtml);
-
-                publishedGames.push({ name: gameName, html: sanitizedHtml, publisher: loggedInUser });
-                localStorage.setItem('publishedGames', JSON.stringify(publishedGames));
-                alert('Game published successfully');
-                closeUploadContainer();
-            } else {
-                alert('Please provide both HTML content and a game name');
-            }
-        }
-
-        function closeUploadContainer() {
-            document.getElementById('upload-container').style.display = 'none';
-            document.getElementById('welcome-container').style.display = 'flex';
-        }
-
         function viewPublishedGames() {
             document.getElementById('welcome-container').style.display = 'none';
             document.getElementById('published-games').style.display = 'block';
@@ -298,7 +238,6 @@
             document.getElementById('login-container').style.display = 'block';
             document.getElementById('welcome-container').style.display = 'none';
             document.getElementById('account-settings').style.display = 'none';
-            document.getElementById('upload-container').style.display = 'none';
             document.getElementById('published-games').style.display = 'none';
         }
     </script>
