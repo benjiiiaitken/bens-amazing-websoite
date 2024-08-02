@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Webblox</title>
+    <title>Webblox Game Maker</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -19,10 +19,10 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            width: 300px;
+            width: 400px;
             text-align: center;
         }
-        input, button, textarea {
+        input, button, select, textarea {
             margin: 10px 0;
             padding: 10px;
             width: 100%;
@@ -38,16 +38,7 @@
         button:hover {
             background-color: #45a049;
         }
-        .link {
-            color: #4CAF50;
-            cursor: pointer;
-            text-align: center;
-            margin-top: 10px;
-        }
-        #welcome-container {
-            display: none;
-        }
-        #account-settings, #editor-container {
+        #editor-container {
             display: none;
         }
         #game-canvas {
@@ -60,156 +51,25 @@
     </style>
 </head>
 <body>
-    <div class="container" id="login-container">
-        <h2>Login to Webblox</h2>
-        <input type="text" id="login-username" placeholder="Username">
-        <input type="password" id="login-password" placeholder="Password">
-        <button onclick="login()">Login</button>
-        <div class="link" onclick="showSignUp()">Don't have an account? Sign up</div>
-        <div class="link" onclick="enterAsGuest()">Enter as Guest</div>
-    </div>
-
-    <div class="container" id="signup-container" style="display: none;">
-        <h2>Sign Up for Webblox</h2>
-        <input type="text" id="signup-username" placeholder="Username">
-        <input type="password" id="signup-password" placeholder="Password">
-        <button onclick="signUp()">Sign Up</button>
-        <div class="link" onclick="showLogin()">Already have an account? Login</div>
-    </div>
-
-    <div class="container" id="welcome-container">
-        <h2 id="welcome-message"></h2>
-        <button onclick="openAccountSettings()">Account Settings</button>
-        <button onclick="openGameEditor()">Game Maker</button>
-        <button onclick="logout()">Logout</button>
-    </div>
-
-    <div class="container" id="account-settings">
-        <h2>Account Settings</h2>
-        <input type="text" id="new-name" placeholder="New Name">
-        <input type="number" id="new-age" placeholder="New Age">
-        <input type="password" id="new-password" placeholder="New Password">
-        <button onclick="updateAccountSettings()">Update Settings</button>
-        <button onclick="closeAccountSettings()">Close</button>
-    </div>
-
     <div class="container" id="editor-container">
         <h2>Game Maker</h2>
+        <select id="template-selector">
+            <option value="2d">2D Template</option>
+            <option value="3d">3D Template</option>
+        </select>
         <textarea id="game-code" rows="10" placeholder="Write your JavaScript game code here..."></textarea>
         <button onclick="runGame()">Run Game</button>
-        <button onclick="closeGameEditor()">Close</button>
         <div id="game-canvas"></div>
     </div>
 
     <script>
-        let users = JSON.parse(localStorage.getItem('users')) || {};
-        let loggedInUser = localStorage.getItem('loggedInUser') || null;
-
         document.addEventListener('DOMContentLoaded', () => {
-            if (loggedInUser) {
-                document.getElementById('login-container').style.display = 'none';
-                document.getElementById('welcome-message').innerText = `Welcome to Webblox, ${loggedInUser}!`;
-                document.getElementById('welcome-container').style.display = 'block';
-            } else {
-                document.getElementById('login-container').style.display = 'block';
-            }
-        });
-
-        function showLogin() {
-            document.getElementById('signup-container').style.display = 'none';
-            document.getElementById('login-container').style.display = 'block';
-        }
-
-        function showSignUp() {
-            document.getElementById('login-container').style.display = 'none';
-            document.getElementById('signup-container').style.display = 'block';
-        }
-
-        function enterAsGuest() {
-            loggedInUser = 'Guest';
-            localStorage.setItem('loggedInUser', 'Guest');
-            document.getElementById('login-container').style.display = 'none';
-            document.getElementById('welcome-message').innerText = 'Welcome to Webblox, Guest!';
-            document.getElementById('welcome-container').style.display = 'block';
-        }
-
-        function login() {
-            const username = document.getElementById('login-username').value;
-            const password = document.getElementById('login-password').value;
-
-            if (users[username] && users[username].password === password) {
-                loggedInUser = username;
-                localStorage.setItem('loggedInUser', username);
-                document.getElementById('login-container').style.display = 'none';
-                document.getElementById('welcome-message').innerText = `Welcome to Webblox, ${username}!`;
-                document.getElementById('welcome-container').style.display = 'block';
-            } else {
-                alert('Invalid username or password');
-            }
-        }
-
-        function signUp() {
-            const username = document.getElementById('signup-username').value;
-            const password = document.getElementById('signup-password').value;
-
-            if (username && password) {
-                if (!users[username]) {
-                    users[username] = { password: password, name: username, age: null };
-                    localStorage.setItem('users', JSON.stringify(users));
-                    alert('Sign up successful! Please log in.');
-                    showLogin();
-                } else {
-                    alert('Username already exists');
-                }
-            } else {
-                alert('Please enter both username and password');
-            }
-        }
-
-        function openAccountSettings() {
-            if (loggedInUser !== 'Guest') {
-                document.getElementById('welcome-container').style.display = 'none';
-                document.getElementById('account-settings').style.display = 'block';
-            } else {
-                alert('Guests cannot change account settings');
-            }
-        }
-
-        function updateAccountSettings() {
-            const newName = document.getElementById('new-name').value;
-            const newAge = document.getElementById('new-age').value;
-            const newPassword = document.getElementById('new-password').value;
-
-            if (loggedInUser && users[loggedInUser]) {
-                if (newName) users[loggedInUser].name = newName;
-                if (newAge) users[loggedInUser].age = newAge;
-                if (newPassword) users[loggedInUser].password = newPassword;
-
-                localStorage.setItem('users', JSON.stringify(users));
-                alert('Account settings updated successfully');
-                closeAccountSettings();
-            } else {
-                alert('No user is logged in');
-            }
-        }
-
-        function closeAccountSettings() {
-            document.getElementById('account-settings').style.display = 'none';
-            document.getElementById('welcome-container').style.display = 'block';
-        }
-
-        function openGameEditor() {
-            document.getElementById('welcome-container').style.display = 'none';
             document.getElementById('editor-container').style.display = 'block';
-        }
-
-        function closeGameEditor() {
-            document.getElementById('editor-container').style.display = 'none';
-            document.getElementById('welcome-container').style.display = 'block';
-        }
+        });
 
         function runGame() {
             const code = document.getElementById('game-code').value;
+            const template = document.getElementById('template-selector').value;
             const gameCanvas = document.getElementById('game-canvas');
             gameCanvas.innerHTML = '';
             const script = document.createElement('script');
@@ -221,17 +81,21 @@
                     canvas.height = 400;
                     const context = canvas.getContext('2d');
                     gameCanvas.appendChild(canvas);
-                    ${code}
+                    if (template === '2d') {
+                        // Initialize 2D game template
+                        context.fillStyle = '#000';
+                        context.fillRect(0, 0, canvas.width, canvas.height);
+                        ${code}
+                    } else if (template === '3d') {
+                        // Initialize 3D game template using Three.js or similar
+                        // For demonstration purposes, we'll just change the canvas color
+                        context.fillStyle = '#00f';
+                        context.fillRect(0, 0, canvas.width, canvas.height);
+                        ${code}
+                    }
                 })();
             `;
             gameCanvas.appendChild(script);
-        }
-
-        function logout() {
-            localStorage.removeItem('loggedInUser');
-            document.getElementById('welcome-container').style.display = 'none';
-            document.getElementById('login-container').style.display = 'block';
-            loggedInUser = null;
         }
     </script>
 </body>
