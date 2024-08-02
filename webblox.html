@@ -7,11 +7,11 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
             display: flex;
-            flex-direction: column;
+            justify-content: center;
             align-items: center;
+            height: 100vh;
+            margin: 0;
             background-color: #f0f0f0;
         }
         .container {
@@ -21,9 +21,8 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             width: 300px;
             text-align: center;
-            margin-top: 20px;
         }
-        .container button, .container input {
+        input, button {
             margin: 10px 0;
             padding: 10px;
             width: 100%;
@@ -39,17 +38,25 @@
         button:hover {
             background-color: #45a049;
         }
-        input {
-            border: 1px solid #ccc;
-            border-radius: 4px;
+        .link {
+            color: #4CAF50;
+            cursor: pointer;
+            text-align: center;
+            margin-top: 10px;
+        }
+        #welcome-container {
+            display: none;
+        }
+        #account-settings, #editor-container {
+            display: none;
         }
         #game-canvas {
             width: 600px;
             height: 400px;
             border: 1px solid #ccc;
             background-color: #e0e0e0;
-            position: relative;
             margin-top: 20px;
+            position: relative;
         }
         .block {
             position: absolute;
@@ -58,22 +65,12 @@
             cursor: move;
         }
         .toolbox {
+            display: flex;
+            justify-content: space-between;
             margin-top: 10px;
         }
-        #test-button {
-            margin-top: 20px;
-            padding: 10px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        #test-button:hover {
-            background-color: #45a049;
-        }
-        #editor-container {
-            display: none;
+        .toolbox input {
+            width: 30%;
         }
     </style>
 </head>
@@ -95,14 +92,14 @@
         <div class="link" onclick="showLogin()">Already have an account? Login</div>
     </div>
 
-    <div class="container" id="welcome-container" style="display: none;">
+    <div class="container" id="welcome-container">
         <h2 id="welcome-message"></h2>
         <button onclick="openAccountSettings()">Account Settings</button>
         <button onclick="openGameEditor()">Game Maker</button>
         <button onclick="logout()">Logout</button>
     </div>
 
-    <div class="container" id="account-settings" style="display: none;">
+    <div class="container" id="account-settings">
         <h2>Account Settings</h2>
         <input type="text" id="new-name" placeholder="New Name">
         <input type="number" id="new-age" placeholder="New Age">
@@ -134,7 +131,7 @@
             if (loggedInUser) {
                 document.getElementById('login-container').style.display = 'none';
                 document.getElementById('welcome-message').innerText = `Welcome to Webblox, ${loggedInUser}!`;
-                document.getElementById('welcome-container').style.display = 'flex';
+                document.getElementById('welcome-container').style.display = 'block';
             } else {
                 document.getElementById('login-container').style.display = 'block';
             }
@@ -155,7 +152,7 @@
             localStorage.setItem('loggedInUser', 'Guest');
             document.getElementById('login-container').style.display = 'none';
             document.getElementById('welcome-message').innerText = 'Welcome to Webblox, Guest!';
-            document.getElementById('welcome-container').style.display = 'flex';
+            document.getElementById('welcome-container').style.display = 'block';
         }
 
         function login() {
@@ -167,7 +164,7 @@
                 localStorage.setItem('loggedInUser', username);
                 document.getElementById('login-container').style.display = 'none';
                 document.getElementById('welcome-message').innerText = `Welcome to Webblox, ${username}!`;
-                document.getElementById('welcome-container').style.display = 'flex';
+                document.getElementById('welcome-container').style.display = 'block';
             } else {
                 alert('Invalid username or password');
             }
@@ -220,12 +217,12 @@
 
         function closeAccountSettings() {
             document.getElementById('account-settings').style.display = 'none';
-            document.getElementById('welcome-container').style.display = 'flex';
+            document.getElementById('welcome-container').style.display = 'block';
         }
 
         function openGameEditor() {
             document.getElementById('welcome-container').style.display = 'none';
-            document.getElementById('editor-container').style.display = 'flex';
+            document.getElementById('editor-container').style.display = 'block';
         }
 
         function addBlock() {
