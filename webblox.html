@@ -22,7 +22,7 @@
             width: 300px;
             text-align: center;
         }
-        input, button {
+        input, button, textarea {
             margin: 10px 0;
             padding: 10px;
             width: 100%;
@@ -56,21 +56,6 @@
             border: 1px solid #ccc;
             background-color: #e0e0e0;
             margin-top: 20px;
-            position: relative;
-        }
-        .block {
-            position: absolute;
-            background-color: #4CAF50;
-            border: 1px solid #000;
-            cursor: move;
-        }
-        .toolbox {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 10px;
-        }
-        .toolbox input {
-            width: 30%;
         }
     </style>
 </head>
@@ -110,23 +95,15 @@
 
     <div class="container" id="editor-container">
         <h2>Game Maker</h2>
-        <div class="toolbox">
-            <button onclick="addBlock()">Add Block</button>
-            <button onclick="clearBlocks()">Clear Blocks</button>
-            <input type="color" id="color-picker" title="Change Block Color">
-            <input type="number" id="width-picker" placeholder="Width" title="Change Block Width">
-            <input type="number" id="height-picker" placeholder="Height" title="Change Block Height">
-        </div>
-        <div id="game-canvas"></div>
-        <button onclick="testGame()">Test Game</button>
+        <textarea id="game-code" rows="10" placeholder="Write your JavaScript game code here..."></textarea>
+        <button onclick="runGame()">Run Game</button>
         <button onclick="closeGameEditor()">Close</button>
+        <div id="game-canvas"></div>
     </div>
 
     <script>
         let users = JSON.parse(localStorage.getItem('users')) || {};
         let loggedInUser = localStorage.getItem('loggedInUser') || null;
-        let selectedBlock = null;
-        let blocks = [];
 
         document.addEventListener('DOMContentLoaded', () => {
             if (loggedInUser) {
@@ -231,81 +208,23 @@
             document.getElementById('welcome-container').style.display = 'block';
         }
 
-        function addBlock() {
-            const block = document.createElement('div');
-            block.className = 'block';
-            block.style.width = '100px';
-            block.style.height = '100px';
-            block.style.top = '0';
-            block.style.left = '0';
-
-            block.onmousedown = function(event) {
-                selectedBlock = block;
-                block.style.zIndex = 1000;
-                const shiftX = event.clientX - block.getBoundingClientRect().left;
-                const shiftY = event.clientY - block.getBoundingClientRect().top;
-
-                function moveAt(pageX, pageY) {
-                    block.style.left = pageX - shiftX + 'px';
-                    block.style.top = pageY - shiftY + 'px';
-                }
-
-                function onMouseMove(event) {
-                    moveAt(event.pageX, event.pageY);
-                }
-
-                document.addEventListener('mousemove', onMouseMove);
-
-                block.onmouseup = () => {
-                    document.removeEventListener('mousemove', onMouseMove);
-                    block.onmouseup = null;
-                    block.style.zIndex = '';
-                };
-            };
-
-            document.getElementById('game-canvas').appendChild(block);
-            blocks.push(block);
-        }
-
-        function changeColor(event) {
-            if (selectedBlock) {
-                selectedBlock.style.backgroundColor = event.target.value;
-            }
-        }
-
-        document.getElementById('color-picker').addEventListener('change', changeColor);
-
-        function changeSize() {
-            if (selectedBlock) {
-                const width = document.getElementById('width-picker').value || '100';
-                const height = document.getElementById('height-picker').value || '100';
-                selectedBlock.style.width = width + 'px';
-                selectedBlock.style.height = height + 'px';
-            }
-        }
-
-        document.getElementById('width-picker').addEventListener('change', changeSize);
-        document.getElementById('height-picker').addEventListener('change', changeSize);
-
-        function clearBlocks() {
-            blocks.forEach(block => block.remove());
-            blocks = [];
-        }
-
-        function testGame() {
-            const testCanvas = document.createElement('iframe');
-            testCanvas.style.width = '600px';
-            testCanvas.style.height = '400px';
-            testCanvas.style.border = 'none';
-            document.body.appendChild(testCanvas);
-            const doc = testCanvas.contentDocument || testCanvas.contentWindow.document;
-            doc.open();
-            doc.write('<html><body style="margin: 0;">');
-            blocks.forEach(block => {
-                doc.write(`<div style="position: absolute; width: ${block.style.width}; height: ${block.style.height}; background-color: ${block.style.backgroundColor}; top: ${block.style.top}; left: ${block.style.left};"></div>`);
-            });
-            doc.write('</body></html>');
-            doc.close();
+        function runGame() {
+            const code = document.getElementById('game-code').value;
+            const gameCanvas = document.getElementById('game-canvas');
+            gameCanvas.innerHTML = '';
+            const script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.text = `
+                (function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 600;
+                    canvas.height = 400;
+                    const context = canvas.getContext('2d');
+                    gameCanvas.appendChild(canvas);
+                    ${code}
+                })();
+            `;
+            gameCanvas.appendChild(script);
         }
 
         function logout() {
