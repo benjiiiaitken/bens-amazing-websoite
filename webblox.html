@@ -110,6 +110,53 @@
             border-radius: 5px;
             display: none;
         }
+
+        /* Sign Up Styles */
+        #signup-container {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            background-color: #f0f0f0;
+            position: absolute;
+        }
+
+        .signup-box {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 300px;
+        }
+
+        .signup-box input, .signup-box button {
+            margin: 10px 0;
+            padding: 10px;
+            width: calc(100% - 22px);
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .signup-box button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .signup-box button:hover {
+            background-color: #45a049;
+        }
+
+        .signup-box .link {
+            color: #4CAF50;
+            cursor: pointer;
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -122,6 +169,18 @@
             <button onclick="login()">Login</button>
             <div class="link" onclick="showSignUp()">Don't have an account? Sign up</div>
             <div class="link" onclick="enterAsGuest()">Enter as Guest</div>
+        </div>
+    </div>
+
+    <!-- Sign Up -->
+    <div id="signup-container">
+        <div class="signup-box">
+            <h2>Sign Up</h2>
+            <input type="text" id="signup-username" placeholder="Username">
+            <input type="password" id="signup-password" placeholder="Password">
+            <input type="text" id="signup-age" placeholder="Age">
+            <button onclick="signUp()">Sign Up</button>
+            <div class="link" onclick="showHomepage()">Already have an account? Login</div>
         </div>
     </div>
 
@@ -143,7 +202,13 @@
 
         // Homepage
         function showSignUp() {
-            alert('Sign up functionality is not implemented yet.');
+            document.getElementById('homepage-container').style.display = 'none';
+            document.getElementById('signup-container').style.display = 'flex';
+        }
+
+        function showHomepage() {
+            document.getElementById('signup-container').style.display = 'none';
+            document.getElementById('homepage-container').style.display = 'flex';
         }
 
         function enterAsGuest() {
@@ -167,12 +232,29 @@
             }
         }
 
+        function signUp() {
+            const username = document.getElementById('signup-username').value;
+            const password = document.getElementById('signup-password').value;
+            const age = document.getElementById('signup-age').value;
+
+            if (users[username]) {
+                alert('Username already exists');
+                return;
+            }
+
+            users[username] = { password, age };
+            localStorage.setItem('users', JSON.stringify(users));
+            alert('Sign up successful');
+            showHomepage();
+        }
+
         function goToEditor() {
             if (loggedInUser === 'Guest') {
                 showError('Guests cannot access the Game Editor.');
                 return;
             }
             document.getElementById('homepage-container').style.display = 'none';
+            document.getElementById('signup-container').style.display = 'none';
             document.getElementById('editor-container').style.display = 'flex';
         }
 
