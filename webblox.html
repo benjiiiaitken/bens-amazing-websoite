@@ -3,27 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Editor</title>
+    <title>Webblox - Game Editor</title>
     <style>
         body {
             margin: 0;
-            overflow: hidden;
             font-family: Arial, sans-serif;
         }
-        #container {
+        #homepage-container, #editor-container {
             position: absolute;
             width: 100vw;
             height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #homepage-container {
+            background-color: #f0f0f0;
+        }
+        #editor-container {
+            display: none;
+            flex-direction: column;
+            align-items: flex-start;
         }
         #controls {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 100;
             background: rgba(0, 0, 0, 0.7);
             color: white;
             padding: 10px;
             border-radius: 5px;
+            margin-bottom: 10px;
         }
         button {
             display: block;
@@ -38,136 +45,166 @@
         button:hover {
             background: #666;
         }
+        input[type="color"] {
+            margin: 5px 0;
+        }
+        canvas {
+            border: 1px solid #ccc;
+        }
+        .link {
+            color: #4CAF50;
+            cursor: pointer;
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
-    <div id="container"></div>
-    <div id="controls">
-        <button onclick="testGame()">Test Game</button>
-        <button onclick="moveBlock()">Move Block</button>
-        <button onclick="changeColor()">Change Color</button>
-        <button onclick="changeShape()">Change Shape</button>
-        <div id="color-picker">
-            <input type="color" id="color" value="#ff0000">
-        </div>
-        <div id="shape-picker">
-            <button onclick="setShape('box')">Box</button>
-            <button onclick="setShape('sphere')">Sphere</button>
+    <!-- Homepage -->
+    <div id="homepage-container">
+        <div>
+            <h2>Welcome to Webblox</h2>
+            <input type="text" id="login-username" placeholder="Username">
+            <input type="password" id="login-password" placeholder="Password">
+            <button onclick="login()">Login</button>
+            <div class="link" onclick="showSignUp()">Don't have an account? Sign up</div>
+            <div class="link" onclick="enterAsGuest()">Enter as Guest</div>
+            <button onclick="goToEditor()">Go to Game Editor</button>
         </div>
     </div>
 
-    <!-- Include Three.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Game Editor -->
+    <div id="editor-container">
+        <div id="controls">
+            <button onclick="testGame()">Test Game</button>
+            <button onclick="toggleMoveMode()">Move Block</button>
+            <input type="color" id="colorPicker" onchange="changeColor()" value="#ff0000">
+            <button onclick="changeShape()">Change Shape</button>
+        </div>
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
     <script>
-        let scene, camera, renderer;
-        let player, block;
-        let blockShape = 'box';
-        let isMovingBlock = false;
+        const users = JSON.parse(localStorage.getItem('users')) || {};
+        let loggedInUser = localStorage.getItem('loggedInUser') || null;
 
-        init();
-        animate();
-
-        function init() {
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            renderer = new THREE.WebGLRenderer();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            document.getElementById('container').appendChild(renderer.domElement);
-
-            // Player model
-            const geometry = new THREE.BoxGeometry();
-            const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-            player = new THREE.Mesh(geometry, material);
-            player.position.set(0, 1, 0);
-            scene.add(player);
-
-            // Block model
-            createBlock();
-
-            camera.position.z = 5;
-
-            // Lighting
-            const ambientLight = new THREE.AmbientLight(0x404040);
-            scene.add(ambientLight);
+        // Homepage
+        function showSignUp() {
+            alert('Sign up functionality is not implemented yet.');
         }
 
-        function createBlock() {
-            const geometry = blockShape === 'box' ? new THREE.BoxGeometry() : new THREE.SphereGeometry();
-            const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-            block = new THREE.Mesh(geometry, material);
-            block.position.set(0, 0, -5);
-            scene.add(block);
+        function enterAsGuest() {
+            loggedInUser = 'Guest';
+            localStorage.setItem('loggedInUser', 'Guest');
+            alert('Entered as Guest');
+            goToEditor();
         }
 
-        function animate() {
-            requestAnimationFrame(animate);
-            renderer.render(scene, camera);
-            handlePlayerMovement();
+        function login() {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+
+            if (users[username] && users[username].password === password) {
+                loggedInUser = username;
+                localStorage.setItem('loggedInUser', username);
+                alert('Login successful');
+                goToEditor();
+            } else {
+                alert('Invalid username or password');
+            }
         }
 
-        function handlePlayerMovement() {
-            document.addEventListener('keydown', function(event) {
-                const speed = 0.1;
-                switch(event.code) {
-                    case 'ArrowUp':
-                        player.position.z -= speed;
-                        break;
-                    case 'ArrowDown':
-                        player.position.z += speed;
-                        break;
-                    case 'ArrowLeft':
-                        player.position.x -= speed;
-                        break;
-                    case 'ArrowRight':
-                        player.position.x += speed;
-                        break;
-                }
-            });
+        function goToEditor() {
+            document.getElementById('homepage-container').style.display = 'none';
+            document.getElementById('editor-container').style.display = 'flex';
+        }
+
+        // Game Editor
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let blocks = [];
+        let selectedBlock = null;
+        let moveMode = false;
+        let blockColor = '#ff0000';
+        let blockShape = 'rectangle'; // Can be 'rectangle' or 'circle'
+
+        function createBlock(x, y, width, height) {
+            return { x, y, width, height, color: blockColor, shape: blockShape };
+        }
+
+        function drawBlock(block) {
+            ctx.fillStyle = block.color;
+            if (block.shape === 'rectangle') {
+                ctx.fillRect(block.x, block.y, block.width, block.height);
+            } else if (block.shape === 'circle') {
+                ctx.beginPath();
+                ctx.arc(block.x + block.width / 2, block.y + block.height / 2, Math.min(block.width, block.height) / 2, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            blocks.forEach(block => drawBlock(block));
+        }
+
+        function addBlock(x, y, width, height) {
+            blocks.push(createBlock(x, y, width, height));
+            draw();
+        }
+
+        function toggleMoveMode() {
+            moveMode = !moveMode;
+        }
+
+        function changeColor() {
+            blockColor = document.getElementById('colorPicker').value;
+        }
+
+        function changeShape() {
+            blockShape = blockShape === 'rectangle' ? 'circle' : 'rectangle';
+            if (selectedBlock) {
+                selectedBlock.shape = blockShape;
+            }
+            draw();
         }
 
         function testGame() {
             alert('Testing the game...');
         }
 
-        function moveBlock() {
-            isMovingBlock = !isMovingBlock;
-            document.addEventListener('keydown', moveBlockWithKeys);
-        }
-
-        function moveBlockWithKeys(event) {
-            if (!isMovingBlock) return;
-            const speed = 0.1;
-            switch(event.code) {
-                case 'ArrowUp':
-                    block.position.z -= speed;
-                    break;
-                case 'ArrowDown':
-                    block.position.z += speed;
-                    break;
-                case 'ArrowLeft':
-                    block.position.x -= speed;
-                    break;
-                case 'ArrowRight':
-                    block.position.x += speed;
-                    break;
+        canvas.addEventListener('mousedown', (e) => {
+            const x = e.clientX;
+            const y = e.clientY;
+            const block = blocks.find(b => x >= b.x && x <= b.x + b.width && y >= b.y && y <= b.y + b.height);
+            if (moveMode && block) {
+                selectedBlock = block;
+                canvas.addEventListener('mousemove', moveBlock);
+                canvas.addEventListener('mouseup', () => {
+                    canvas.removeEventListener('mousemove', moveBlock);
+                    selectedBlock = null;
+                });
+            } else {
+                addBlock(x, y, 100, 100);
             }
+        });
+
+        function moveBlock(e) {
+            if (!selectedBlock) return;
+            selectedBlock.x = e.clientX;
+            selectedBlock.y = e.clientY;
+            draw();
         }
 
-        function changeColor() {
-            const color = document.getElementById('color').value;
-            block.material.color.set(color);
-        }
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            draw();
+        });
 
-        function changeShape() {
-            scene.remove(block);
-            blockShape = blockShape === 'box' ? 'sphere' : 'box';
-            createBlock();
-        }
-
-        function setShape(shape) {
-            blockShape = shape;
-            changeShape();
-        }
+        draw(); // Initial draw
     </script>
 </body>
 </html>
