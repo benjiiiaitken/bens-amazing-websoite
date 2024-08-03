@@ -45,7 +45,7 @@
             text-align: center;
             margin-top: 10px;
         }
-        #editor-container, #account-settings, #upload-container, #published-games, #players-container {
+        #editor-container, #account-settings, #upload-container, #published-games, #players-container, #chat-container {
             display: none;
             width: 90%;
             max-width: 600px;
@@ -57,12 +57,21 @@
             background-color: #e0e0e0;
             margin-top: 20px;
         }
-        #published-games .game-item, #players-container .player-item {
+        #published-games .game-item, #players-container .player-item, #chat-container .friend-item {
             margin: 10px 0;
             cursor: pointer;
         }
-        #published-games .game-item.selected, #players-container .player-item.selected {
+        #published-games .game-item.selected, #players-container .player-item.selected, #chat-container .friend-item.selected {
             background-color: #d3ffd3;
+        }
+        .chat-message {
+            margin: 5px 0;
+        }
+        .chat-input {
+            width: calc(100% - 20px);
+            padding: 10px;
+            box-sizing: border-box;
+            margin-top: 10px;
         }
         @media (min-width: 600px) {
             .container {
@@ -100,6 +109,7 @@
         <button onclick="viewPublishedGames()">View Published Games</button>
         <button onclick="openGameMaker()">Game Maker</button>
         <button onclick="viewPlayers()">Players</button>
+        <button onclick="viewFriends()">Friends</button>
         <button onclick="logout()">Logout</button>
     </div>
 
@@ -146,7 +156,18 @@
     <div class="container" id="players-container">
         <h2>Players</h2>
         <div id="players-list"></div>
+        <div id="friend-requests"></div>
         <button onclick="closePlayersContainer()">Close</button>
+    </div>
+
+    <!-- Chat -->
+    <div class="container" id="chat-container">
+        <h2>Chat with Friends</h2>
+        <div id="friends-list"></div>
+        <div id="chat-messages" style="border: 1px solid #ccc; padding: 10px; height: 200px; overflow-y: scroll;"></div>
+        <input type="text" id="chat-input" class="chat-input" placeholder="Type a message">
+        <button onclick="sendMessage()">Send</button>
+        <button onclick="closeChat()">Close</button>
     </div>
 
     <script>
@@ -154,8 +175,11 @@
         let loggedInUser = localStorage.getItem('loggedInUser') || null;
         let selectedGame = null;
         let selectedPlayer = null;
+        let selectedFriend = null;
         let publishedGames = JSON.parse(localStorage.getItem('publishedGames')) || [];
         let friends = JSON.parse(localStorage.getItem('friends')) || {};
+        let friendRequests = JSON.parse(localStorage.getItem('friendRequests')) || {};
+        let messages = JSON.parse(localStorage.getItem('messages')) || {};
 
         document.addEventListener('DOMContentLoaded', () => {
             if (loggedInUser) {
@@ -204,17 +228,13 @@
             const username = document.getElementById('signup-username').value;
             const password = document.getElementById('signup-password').value;
 
-            if (username && password) {
-                if (!users[username]) {
-                    users[username] = { password: password, name: username, age: null };
-                    localStorage.setItem('users', JSON.stringify(users));
-                    alert('Sign up successful! Please log in.');
-                    showLogin();
-                } else {
-                    alert('Username already exists');
-                }
+            if (!users[username]) {
+                users[username] = { password, age: null };
+                localStorage.setItem('users', JSON.stringify(users));
+                alert('Sign up successful! Please log in.');
+                showLogin();
             } else {
-                alert('Please enter both username and password');
+                alert('Username already exists. Please choose another.');
             }
         }
 
@@ -365,18 +385,53 @@
                     playersList.appendChild(playerItem);
                 }
             });
+            displayFriendRequests();
         }
 
         function sendFriendRequest(player) {
+            if (!friendRequests[loggedInUser]) {
+                friendRequests[loggedInUser] = [];
+            }
+            if (!friendRequests[player]) {
+                friendRequests[player] = [];
+            }
+            if (!friendRequests[player].includes(loggedInUser)) {
+                friendRequests[player].push(loggedInUser);
+                localStorage.setItem('friendRequests', JSON.stringify(friendRequests));
+                alert(`Friend request sent to ${player}`);
+            } else {
+                alert(`Friend request already sent to ${player}`);
+            }
+        }
+
+        function displayFriendRequests() {
+            const friendRequestsContainer = document.getElementById('friend-requests');
+            friendRequestsContainer.innerHTML = '<h3>Friend Requests</h3>';
+            const requests = friendRequests[loggedInUser] || [];
+            requests.forEach((request, index) => {
+                const requestItem = document.createElement('div');
+                requestItem.innerHTML = `${request} <button onclick="acceptFriendRequest('${request}', ${index})">Accept</button>`;
+                friendRequestsContainer.appendChild(requestItem);
+            });
+        }
+
+        function acceptFriendRequest(request, index) {
             if (!friends[loggedInUser]) {
                 friends[loggedInUser] = [];
             }
-            if (!friends[loggedInUser].includes(player)) {
-                friends[loggedInUser].push(player);
+            if (!friends[loggedInUser].includes(request)) {
+                friends[loggedInUser].push(request);
+                if (!friends[request]) {
+                    friends[request] = [];
+                }
+                friends[request].push(loggedInUser);
+                friendRequests[loggedInUser].splice(index, 1);
                 localStorage.setItem('friends', JSON.stringify(friends));
-                alert(`Friend request sent to ${player}`);
+                localStorage.setItem('friendRequests', JSON.stringify(friendRequests));
+                alert(`Friend request accepted from ${request}`);
+                viewPlayers();
             } else {
-                alert(`You are already friends with ${player}`);
+                alert(`You are already friends with ${request}`);
             }
         }
 
@@ -385,10 +440,73 @@
             document.getElementById('welcome-container').style.display = 'block';
         }
 
+        function viewFriends() {
+            document.getElementById('welcome-container').style.display = 'none';
+            document.getElementById('chat-container').style.display = 'block';
+            const friendsList = document.getElementById('friends-list');
+            friendsList.innerHTML = '';
+
+            (friends[loggedInUser] || []).forEach((friend) => {
+                const friendItem = document.createElement('div');
+                friendItem.className = 'friend-item';
+                friendItem.innerHTML = friend;
+                friendItem.onclick = () => selectFriend(friend, friendItem);
+                friendsList.appendChild(friendItem);
+            });
+        }
+
+        function selectFriend(friend, friendItem) {
+            selectedFriend = friend;
+            document.querySelectorAll('.friend-item').forEach(item => item.classList.remove('selected'));
+            friendItem.classList.add('selected');
+            displayMessages();
+        }
+
+        function displayMessages() {
+            const chatMessages = document.getElementById('chat-messages');
+            chatMessages.innerHTML = '';
+            const chat = messages[loggedInUser]?.[selectedFriend] || [];
+            chat.forEach(message => {
+                const messageItem = document.createElement('div');
+                messageItem.className = 'chat-message';
+                messageItem.innerText = `${message.sender}: ${message.text}`;
+                chatMessages.appendChild(messageItem);
+            });
+        }
+
+        function sendMessage() {
+            const chatInput = document.getElementById('chat-input').value;
+            if (selectedFriend && chatInput) {
+                if (!messages[loggedInUser]) {
+                    messages[loggedInUser] = {};
+                }
+                if (!messages[loggedInUser][selectedFriend]) {
+                    messages[loggedInUser][selectedFriend] = [];
+                }
+                messages[loggedInUser][selectedFriend].push({ sender: loggedInUser, text: chatInput });
+                if (!messages[selectedFriend]) {
+                    messages[selectedFriend] = {};
+                }
+                if (!messages[selectedFriend][loggedInUser]) {
+                    messages[selectedFriend][loggedInUser] = [];
+                }
+                messages[selectedFriend][loggedInUser].push({ sender: loggedInUser, text: chatInput });
+                localStorage.setItem('messages', JSON.stringify(messages));
+                document.getElementById('chat-input').value = '';
+                displayMessages();
+            } else {
+                alert('Please select a friend and enter a message');
+            }
+        }
+
+        function closeChat() {
+            document.getElementById('chat-container').style.display = 'none';
+            document.getElementById('welcome-container').style.display = 'block';
+        }
+
         function logout() {
-            localStorage.removeItem('loggedInUser');
-            localStorage.removeItem('friends');
             loggedInUser = null;
+            localStorage.removeItem('loggedInUser');
             document.getElementById('welcome-container').style.display = 'none';
             document.getElementById('login-container').style.display = 'block';
         }
