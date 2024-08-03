@@ -19,11 +19,10 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            width: 90%;
-            max-width: 300px;
+            width: 300px;
             text-align: center;
         }
-        input, button, select, textarea {
+        input, button, textarea {
             margin: 10px 0;
             padding: 10px;
             width: 100%;
@@ -45,46 +44,33 @@
             text-align: center;
             margin-top: 10px;
         }
-        #editor-container, #account-settings, #upload-container, #published-games, #players-container, #chat-container {
+        #welcome-container, #account-settings, #upload-container, #published-games, #editor-container, #players-container, #chat-container {
             display: none;
-            width: 90%;
-            max-width: 600px;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
         }
-        #game-canvas {
-            width: 100%;
-            height: 200px;
-            border: 1px solid #ccc;
-            background-color: #e0e0e0;
-            margin-top: 20px;
-        }
-        #published-games .game-item, #players-container .player-item, #chat-container .friend-item {
+        #published-games .game-item, #players-list .player-item, #friends-list .friend-item {
             margin: 10px 0;
             cursor: pointer;
         }
-        #published-games .game-item.selected, #players-container .player-item.selected, #chat-container .friend-item.selected {
+        #published-games .game-item.selected, #friends-list .friend-item.selected {
             background-color: #d3ffd3;
         }
-        .chat-message {
-            margin: 5px 0;
-        }
-        .chat-input {
-            width: calc(100% - 20px);
+        #chat-messages {
+            border: 1px solid #ccc;
             padding: 10px;
-            box-sizing: border-box;
-            margin-top: 10px;
+            width: 100%;
+            height: 200px;
+            overflow-y: auto;
+            margin-bottom: 10px;
         }
-        @media (min-width: 600px) {
-            .container {
-                max-width: 600px;
-            }
-            #game-canvas {
-                height: 400px;
-            }
+        #chat-messages .chat-message {
+            margin-bottom: 10px;
         }
     </style>
 </head>
 <body>
-    <!-- Home Screen -->
     <div class="container" id="login-container">
         <h2>Login to Webblox</h2>
         <input type="text" id="login-username" placeholder="Username">
@@ -100,20 +86,16 @@
         <button onclick="signUp()">Sign Up</button>
         <div class="link" onclick="showLogin()">Already have an account? Login</div>
     </div>
-
-    <!-- Welcome Screen -->
-    <div class="container" id="welcome-container" style="display: none;">
+    <div class="container" id="welcome-container">
         <h2 id="welcome-message"></h2>
         <button onclick="openAccountSettings()">Account Settings</button>
         <button onclick="openUploadContainer()">Publish Game</button>
         <button onclick="viewPublishedGames()">View Published Games</button>
-        <button onclick="openGameMaker()">Game Maker</button>
-        <button onclick="viewPlayers()">Players</button>
-        <button onclick="viewFriends()">Friends</button>
+        <button onclick="openGameMaker()">Open Game Maker</button>
+        <button onclick="viewPlayers()">View Players</button>
+        <button onclick="viewFriends()">View Friends</button>
         <button onclick="logout()">Logout</button>
     </div>
-
-    <!-- Account Settings -->
     <div class="container" id="account-settings">
         <h2>Account Settings</h2>
         <input type="text" id="new-name" placeholder="New Name">
@@ -122,8 +104,6 @@
         <button onclick="updateAccountSettings()">Update Settings</button>
         <button onclick="closeAccountSettings()">Close</button>
     </div>
-
-    <!-- Publish Game -->
     <div class="container" id="upload-container">
         <h2>Publish Your Game</h2>
         <textarea id="game-html" rows="10" placeholder="Paste your HTML code here"></textarea>
@@ -131,41 +111,34 @@
         <button onclick="publishGame()">Publish Game</button>
         <button onclick="closeUploadContainer()">Close</button>
     </div>
-
-    <!-- Published Games -->
     <div class="container" id="published-games">
         <h2>Published Games</h2>
         <div id="games-list"></div>
         <button onclick="playSelectedGame()">Play Selected Game</button>
         <button onclick="closePublishedGames()">Close</button>
     </div>
-
-    <!-- Game Maker -->
     <div class="container" id="editor-container">
         <h2>Game Maker</h2>
+        <textarea id="game-code" rows="10" placeholder="Write your game code here"></textarea>
         <select id="template-selector">
-            <option value="2d">2D Template</option>
-            <option value="3d">3D Template</option>
+            <option value="2d">2D</option>
+            <option value="3d">3D</option>
         </select>
-        <textarea id="game-code" rows="10" placeholder="Write your JavaScript game code here..."></textarea>
         <button onclick="runGame()">Run Game</button>
-        <div id="game-canvas"></div>
+        <button onclick="closeGameMaker()">Close</button>
+        <div id="game-canvas" style="width: 100%; height: 300px; border: 1px solid #ccc; margin-top: 10px;"></div>
     </div>
-
-    <!-- Players -->
     <div class="container" id="players-container">
         <h2>Players</h2>
         <div id="players-list"></div>
         <div id="friend-requests"></div>
         <button onclick="closePlayersContainer()">Close</button>
     </div>
-
-    <!-- Chat -->
     <div class="container" id="chat-container">
-        <h2>Chat with Friends</h2>
+        <h2>Friends</h2>
         <div id="friends-list"></div>
-        <div id="chat-messages" style="border: 1px solid #ccc; padding: 10px; height: 200px; overflow-y: scroll;"></div>
-        <input type="text" id="chat-input" class="chat-input" placeholder="Type a message">
+        <div id="chat-messages"></div>
+        <input type="text" id="chat-input" placeholder="Type your message">
         <button onclick="sendMessage()">Send</button>
         <button onclick="closeChat()">Close</button>
     </div>
@@ -174,12 +147,11 @@
         let users = JSON.parse(localStorage.getItem('users')) || {};
         let loggedInUser = localStorage.getItem('loggedInUser') || null;
         let selectedGame = null;
-        let selectedPlayer = null;
-        let selectedFriend = null;
         let publishedGames = JSON.parse(localStorage.getItem('publishedGames')) || [];
-        let friends = JSON.parse(localStorage.getItem('friends')) || {};
         let friendRequests = JSON.parse(localStorage.getItem('friendRequests')) || {};
+        let friends = JSON.parse(localStorage.getItem('friends')) || {};
         let messages = JSON.parse(localStorage.getItem('messages')) || {};
+        let selectedFriend = null;
 
         document.addEventListener('DOMContentLoaded', () => {
             if (loggedInUser) {
@@ -234,7 +206,7 @@
                 alert('Sign up successful! Please log in.');
                 showLogin();
             } else {
-                alert('Username already exists. Please choose another.');
+                alert('Username already exists');
             }
         }
 
@@ -279,17 +251,35 @@
             }
         }
 
+        function sanitizeHTML(html) {
+            const template = document.createElement('template');
+            template.innerHTML = html;
+
+            const scripts = template.content.querySelectorAll('script');
+            scripts.forEach(script => script.remove());
+
+            const elementsWithEvents = template.content.querySelectorAll('*');
+            elementsWithEvents.forEach(element => {
+                element.removeAttribute('onload');
+                element.removeAttribute('onclick');
+            });
+
+            return template.innerHTML;
+        }
+
         function publishGame() {
-            const gameHTML = document.getElementById('game-html').value;
+            const gameHtml = document.getElementById('game-html').value;
             const gameName = document.getElementById('game-name').value;
 
-            if (gameHTML && gameName) {
-                publishedGames.push({ name: gameName, html: gameHTML });
+            if (gameHtml && gameName) {
+                const sanitizedHtml = sanitizeHTML(gameHtml);
+
+                publishedGames.push({ name: gameName, html: sanitizedHtml, publisher: loggedInUser });
                 localStorage.setItem('publishedGames', JSON.stringify(publishedGames));
                 alert('Game published successfully');
                 closeUploadContainer();
             } else {
-                alert('Please enter both game name and HTML code');
+                alert('Please provide both HTML content and a game name');
             }
         }
 
@@ -303,36 +293,38 @@
             document.getElementById('published-games').style.display = 'block';
             const gamesList = document.getElementById('games-list');
             gamesList.innerHTML = '';
-
-            publishedGames.forEach((game, index) => {
+            publishedGames.forEach(game => {
                 const gameItem = document.createElement('div');
                 gameItem.className = 'game-item';
-                gameItem.innerText = game.name;
-                gameItem.onclick = () => selectGame(index, gameItem);
+                gameItem.innerHTML = `<strong>${game.name}</strong> <br> <em>by ${game.publisher}</em>`;
+                gameItem.onclick = () => {
+                    if (selectedGame) {
+                        selectedGame.classList.remove('selected');
+                    }
+                    selectedGame = gameItem;
+                    gameItem.classList.add('selected');
+                };
                 gamesList.appendChild(gameItem);
             });
-        }
-
-        function selectGame(index, gameItem) {
-            selectedGame = index;
-            document.querySelectorAll('.game-item').forEach(item => item.classList.remove('selected'));
-            gameItem.classList.add('selected');
-        }
-
-        function playSelectedGame() {
-            if (selectedGame !== null) {
-                const gameHTML = publishedGames[selectedGame].html;
-                const newWindow = window.open();
-                newWindow.document.write(gameHTML);
-                newWindow.document.close();
-            } else {
-                alert('Please select a game to play');
-            }
         }
 
         function closePublishedGames() {
             document.getElementById('published-games').style.display = 'none';
             document.getElementById('welcome-container').style.display = 'block';
+        }
+
+        function playSelectedGame() {
+            if (selectedGame) {
+                const gameName = selectedGame.querySelector('strong').innerText;
+                const game = publishedGames.find(g => g.name === gameName);
+                if (game) {
+                    const newWindow = window.open('', '_blank');
+                    newWindow.document.write(game.html);
+                    newWindow.document.close();
+                }
+            } else {
+                alert('Select a game to play');
+            }
         }
 
         function openGameMaker() {
@@ -341,34 +333,21 @@
         }
 
         function runGame() {
-            const code = document.getElementById('game-code').value;
+            const gameCode = document.getElementById('game-code').value;
             const template = document.getElementById('template-selector').value;
+
             const gameCanvas = document.getElementById('game-canvas');
             gameCanvas.innerHTML = '';
-            const script = document.createElement('script');
-            script.type = 'text/javascript';
-            script.text = `
-                (function() {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = gameCanvas.offsetWidth;
-                    canvas.height = gameCanvas.offsetHeight;
-                    const context = canvas.getContext('2d');
-                    gameCanvas.appendChild(canvas);
-                    if (template === '2d') {
-                        // Initialize 2D game template
-                        context.fillStyle = '#000';
-                        context.fillRect(0, 0, canvas.width, canvas.height);
-                        ${code}
-                    } else if (template === '3d') {
-                        // Initialize 3D game template using Three.js or similar
-                        // For demonstration purposes, we'll just change the canvas color
-                        context.fillStyle = '#00f';
-                        context.fillRect(0, 0, canvas.width, canvas.height);
-                        ${code}
-                    }
-                })();
-            `;
-            gameCanvas.appendChild(script);
+            if (template === '2d') {
+                gameCanvas.innerHTML = `<iframe srcdoc="${sanitizeHTML(gameCode)}" style="width:100%; height:100%;"></iframe>`;
+            } else if (template === '3d') {
+                gameCanvas.innerHTML = `<iframe srcdoc="${sanitizeHTML(gameCode)}" style="width:100%; height:100%;"></iframe>`;
+            }
+        }
+
+        function closeGameMaker() {
+            document.getElementById('editor-container').style.display = 'none';
+            document.getElementById('welcome-container').style.display = 'block';
         }
 
         function viewPlayers() {
@@ -376,22 +355,26 @@
             document.getElementById('players-container').style.display = 'block';
             const playersList = document.getElementById('players-list');
             playersList.innerHTML = '';
-
-            Object.keys(users).forEach((username) => {
-                if (username !== loggedInUser) {
+            Object.keys(users).forEach(user => {
+                if (user !== loggedInUser) {
                     const playerItem = document.createElement('div');
                     playerItem.className = 'player-item';
-                    playerItem.innerHTML = `${username} <button onclick="sendFriendRequest('${username}')">Add Friend</button>`;
+                    playerItem.innerHTML = `<strong>${user}</strong>`;
+                    playerItem.onclick = () => {
+                        sendFriendRequest(user);
+                    };
                     playersList.appendChild(playerItem);
                 }
             });
             displayFriendRequests();
         }
 
+        function closePlayersContainer() {
+            document.getElementById('players-container').style.display = 'none';
+            document.getElementById('welcome-container').style.display = 'block';
+        }
+
         function sendFriendRequest(player) {
-            if (!friendRequests[loggedInUser]) {
-                friendRequests[loggedInUser] = [];
-            }
             if (!friendRequests[player]) {
                 friendRequests[player] = [];
             }
@@ -400,44 +383,37 @@
                 localStorage.setItem('friendRequests', JSON.stringify(friendRequests));
                 alert(`Friend request sent to ${player}`);
             } else {
-                alert(`Friend request already sent to ${player}`);
+                alert('Friend request already sent');
             }
         }
 
         function displayFriendRequests() {
             const friendRequestsContainer = document.getElementById('friend-requests');
-            friendRequestsContainer.innerHTML = '<h3>Friend Requests</h3>';
-            const requests = friendRequests[loggedInUser] || [];
-            requests.forEach((request, index) => {
-                const requestItem = document.createElement('div');
-                requestItem.innerHTML = `${request} <button onclick="acceptFriendRequest('${request}', ${index})">Accept</button>`;
-                friendRequestsContainer.appendChild(requestItem);
-            });
+            friendRequestsContainer.innerHTML = '';
+            if (friendRequests[loggedInUser] && friendRequests[loggedInUser].length > 0) {
+                friendRequests[loggedInUser].forEach(request => {
+                    const requestItem = document.createElement('div');
+                    requestItem.className = 'friend-request';
+                    requestItem.innerHTML = `<strong>${request}</strong> <button onclick="acceptFriendRequest('${request}')">Accept</button>`;
+                    friendRequestsContainer.appendChild(requestItem);
+                });
+            }
         }
 
-        function acceptFriendRequest(request, index) {
+        function acceptFriendRequest(requester) {
             if (!friends[loggedInUser]) {
                 friends[loggedInUser] = [];
             }
-            if (!friends[loggedInUser].includes(request)) {
-                friends[loggedInUser].push(request);
-                if (!friends[request]) {
-                    friends[request] = [];
-                }
-                friends[request].push(loggedInUser);
-                friendRequests[loggedInUser].splice(index, 1);
-                localStorage.setItem('friends', JSON.stringify(friends));
-                localStorage.setItem('friendRequests', JSON.stringify(friendRequests));
-                alert(`Friend request accepted from ${request}`);
-                viewPlayers();
-            } else {
-                alert(`You are already friends with ${request}`);
+            if (!friends[requester]) {
+                friends[requester] = [];
             }
-        }
-
-        function closePlayersContainer() {
-            document.getElementById('players-container').style.display = 'none';
-            document.getElementById('welcome-container').style.display = 'block';
+            friends[loggedInUser].push(requester);
+            friends[requester].push(loggedInUser);
+            friendRequests[loggedInUser] = friendRequests[loggedInUser].filter(req => req !== requester);
+            localStorage.setItem('friends', JSON.stringify(friends));
+            localStorage.setItem('friendRequests', JSON.stringify(friendRequests));
+            alert(`You are now friends with ${requester}`);
+            displayFriendRequests();
         }
 
         function viewFriends() {
@@ -445,27 +421,32 @@
             document.getElementById('chat-container').style.display = 'block';
             const friendsList = document.getElementById('friends-list');
             friendsList.innerHTML = '';
-
-            (friends[loggedInUser] || []).forEach((friend) => {
-                const friendItem = document.createElement('div');
-                friendItem.className = 'friend-item';
-                friendItem.innerHTML = friend;
-                friendItem.onclick = () => selectFriend(friend, friendItem);
-                friendsList.appendChild(friendItem);
-            });
+            if (friends[loggedInUser] && friends[loggedInUser].length > 0) {
+                friends[loggedInUser].forEach(friend => {
+                    const friendItem = document.createElement('div');
+                    friendItem.className = 'friend-item';
+                    friendItem.innerHTML = `<strong>${friend}</strong>`;
+                    friendItem.onclick = () => {
+                        selectFriend(friendItem, friend);
+                    };
+                    friendsList.appendChild(friendItem);
+                });
+            }
         }
 
-        function selectFriend(friend, friendItem) {
-            selectedFriend = friend;
-            document.querySelectorAll('.friend-item').forEach(item => item.classList.remove('selected'));
+        function selectFriend(friendItem, friend) {
+            if (selectedFriend) {
+                selectedFriend.classList.remove('selected');
+            }
+            selectedFriend = friendItem;
             friendItem.classList.add('selected');
-            displayMessages();
+            displayMessages(friend);
         }
 
-        function displayMessages() {
+        function displayMessages(friend) {
             const chatMessages = document.getElementById('chat-messages');
             chatMessages.innerHTML = '';
-            const chat = messages[loggedInUser]?.[selectedFriend] || [];
+            const chat = messages[loggedInUser] && messages[loggedInUser][friend] ? messages[loggedInUser][friend] : [];
             chat.forEach(message => {
                 const messageItem = document.createElement('div');
                 messageItem.className = 'chat-message';
@@ -480,22 +461,24 @@
                 if (!messages[loggedInUser]) {
                     messages[loggedInUser] = {};
                 }
-                if (!messages[loggedInUser][selectedFriend]) {
-                    messages[loggedInUser][selectedFriend] = [];
+                if (!messages[selectedFriend.querySelector('strong').innerText]) {
+                    messages[selectedFriend.querySelector('strong').innerText] = {};
                 }
-                messages[loggedInUser][selectedFriend].push({ sender: loggedInUser, text: chatInput });
-                if (!messages[selectedFriend]) {
-                    messages[selectedFriend] = {};
+                const friend = selectedFriend.querySelector('strong').innerText;
+                if (!messages[loggedInUser][friend]) {
+                    messages[loggedInUser][friend] = [];
                 }
-                if (!messages[selectedFriend][loggedInUser]) {
-                    messages[selectedFriend][loggedInUser] = [];
+                if (!messages[friend][loggedInUser]) {
+                    messages[friend][loggedInUser] = [];
                 }
-                messages[selectedFriend][loggedInUser].push({ sender: loggedInUser, text: chatInput });
+                const newMessage = { sender: loggedInUser, text: chatInput };
+                messages[loggedInUser][friend].push(newMessage);
+                messages[friend][loggedInUser].push(newMessage);
                 localStorage.setItem('messages', JSON.stringify(messages));
+                displayMessages(friend);
                 document.getElementById('chat-input').value = '';
-                displayMessages();
             } else {
-                alert('Please select a friend and enter a message');
+                alert('Select a friend and type a message');
             }
         }
 
