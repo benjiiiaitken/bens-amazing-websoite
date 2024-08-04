@@ -8,7 +8,8 @@
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            overflow: hidden; /* Prevent scrolling */
+            overflow: hidden;
+            background-color: #f0f0f0;
         }
         .container {
             background-color: #fff;
@@ -17,6 +18,9 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             width: 300px;
             text-align: center;
+            margin: 20px auto;
+            display: flex;
+            flex-direction: column;
         }
         input, button, textarea {
             margin: 10px 0;
@@ -42,8 +46,6 @@
         }
         #welcome-container, #account-settings, #upload-container, #published-games, #players-container, #chat-container, #game-container {
             display: none;
-            flex-direction: column;
-            align-items: center;
         }
         #published-games .game-item, #players-container .player-item {
             margin: 10px 0;
@@ -67,8 +69,6 @@
             justify-content: center;
             height: 100vh;
             width: 100vw;
-            margin: 0;
-            padding: 0;
             background-color: #000;
             position: fixed;
             top: 0;
@@ -83,6 +83,7 @@
     </style>
 </head>
 <body>
+    <!-- Login Container -->
     <div class="container" id="login-container">
         <h2>Login to Webblox</h2>
         <input type="text" id="login-username" placeholder="Username">
@@ -92,6 +93,8 @@
         <div class="link" onclick="showSignUp()">Don't have an account? Sign up</div>
         <div class="link" onclick="enterAsGuest()">Enter as Guest</div>
     </div>
+
+    <!-- Sign Up Container -->
     <div class="container" id="signup-container" style="display: none;">
         <h2>Sign Up for Webblox</h2>
         <input type="text" id="signup-username" placeholder="Username">
@@ -100,6 +103,8 @@
         <button onclick="signUp()">Sign Up</button>
         <div class="link" onclick="showLogin()">Already have an account? Login</div>
     </div>
+
+    <!-- Welcome Container -->
     <div class="container" id="welcome-container">
         <h2 id="welcome-message"></h2>
         <button onclick="openAccountSettings()">Account Settings</button>
@@ -108,6 +113,8 @@
         <button onclick="viewPlayers()">View Players</button>
         <button onclick="logout()">Logout</button>
     </div>
+
+    <!-- Account Settings Container -->
     <div class="container" id="account-settings">
         <h2>Account Settings</h2>
         <input type="text" id="new-name" placeholder="New Name">
@@ -116,6 +123,8 @@
         <button onclick="updateAccountSettings()">Update Settings</button>
         <button onclick="closeAccountSettings()">Close</button>
     </div>
+
+    <!-- Upload Container -->
     <div class="container" id="upload-container">
         <h2>Publish Your Game</h2>
         <textarea id="game-html" rows="10" placeholder="Paste your HTML code here"></textarea>
@@ -123,17 +132,23 @@
         <button onclick="publishGame()">Publish Game</button>
         <button onclick="closeUploadContainer()">Close</button>
     </div>
+
+    <!-- Published Games Container -->
     <div class="container" id="published-games">
         <h2>Published Games</h2>
         <div id="games-list"></div>
         <button onclick="playSelectedGame()">Play Selected Game</button>
         <button onclick="closePublishedGames()">Close</button>
     </div>
+
+    <!-- Players Container -->
     <div class="container" id="players-container">
         <h2>Players</h2>
         <div id="players-list"></div>
         <button onclick="closePlayersContainer()">Close</button>
     </div>
+
+    <!-- Chat Container -->
     <div class="container" id="chat-container">
         <h2>Chat with <span id="chat-friend"></span></h2>
         <div id="chat-messages"></div>
@@ -141,7 +156,9 @@
         <button onclick="sendMessage()">Send</button>
         <button onclick="closeChat()">Close</button>
     </div>
-    <div id="game-container" style="display: none;">
+
+    <!-- Game Container -->
+    <div id="game-container">
         <iframe id="game-frame" src=""></iframe>
         <button onclick="closeGameContainer()">Close</button>
     </div>
