@@ -44,18 +44,11 @@
             text-align: center;
             margin-top: 10px;
         }
-        .hidden {
-            display: none;
-        }
-        #welcome-container {
+        #welcome-container, #account-settings, #upload-container, #published-games, #players-container, #chat-container, #game-container {
             display: none;
             flex-direction: column;
             align-items: center;
             text-align: center;
-        }
-        #account-settings, #upload-container, #published-games, #game-container, #players-container, #chat-container {
-            display: none;
-            margin-top: 20px;
         }
         #published-games .game-item {
             margin: 10px 0;
@@ -64,20 +57,12 @@
         #published-games .game-item.selected {
             background-color: #d3ffd3;
         }
-        #players-list .player-item, #friend-requests-list .request-item {
-            margin: 10px 0;
+        .player-item, .friend-item, .request-item {
+            margin: 5px;
             cursor: pointer;
         }
-        #players-list .player-item.selected, #friend-requests-list .request-item.selected {
+        .player-item.selected {
             background-color: #d3ffd3;
-        }
-        #chat-messages {
-            height: 200px;
-            overflow-y: scroll;
-            border: 1px solid #ccc;
-            margin: 10px 0;
-            padding: 10px;
-            text-align: left;
         }
     </style>
 </head>
@@ -86,7 +71,7 @@
         <h2>Login to Webblox</h2>
         <input type="text" id="login-username" placeholder="Username">
         <input type="password" id="login-password" placeholder="Password">
-        <input type="number" id="login-age" placeholder="Age">
+        <input type="number" id="login-age" placeholder="Age (must be at least 10)">
         <button onclick="login()">Login</button>
         <div class="link" onclick="showSignUp()">Don't have an account? Sign up</div>
         <div class="link" onclick="enterAsGuest()">Enter as Guest</div>
@@ -95,7 +80,7 @@
         <h2>Sign Up for Webblox</h2>
         <input type="text" id="signup-username" placeholder="Username">
         <input type="password" id="signup-password" placeholder="Password">
-        <input type="number" id="signup-age" placeholder="Age">
+        <input type="number" id="signup-age" placeholder="Age (must be at least 10)">
         <button onclick="signUp()">Sign Up</button>
         <div class="link" onclick="showLogin()">Already have an account? Login</div>
     </div>
@@ -104,7 +89,7 @@
         <button onclick="openAccountSettings()">Account Settings</button>
         <button onclick="openUploadContainer()">Publish Game</button>
         <button onclick="viewPublishedGames()">View Published Games</button>
-        <button onclick="viewPlayers()">View Players</button>
+        <button onclick="viewPlayers()">Players</button>
         <button onclick="logout()">Logout</button>
     </div>
     <div class="container" id="account-settings">
@@ -135,29 +120,22 @@
     </div>
     <div class="container" id="chat-container">
         <h2>Chat with <span id="chat-friend"></span></h2>
-        <div id="chat-messages"></div>
+        <div id="chat-messages" style="max-height: 200px; overflow-y: auto;"></div>
         <input type="text" id="chat-input" placeholder="Type your message">
         <button onclick="sendMessage()">Send</button>
         <button onclick="closeChat()">Close</button>
     </div>
-    <div class="container hidden" id="game-container">
+    <div class="container" id="game-container">
         <h2 id="game-title"></h2>
         <div id="game-content"></div>
         <button onclick="closeGameContainer()">Close</button>
     </div>
 
     <script>
-        const MIN_AGE = 10;
         let users = JSON.parse(localStorage.getItem('users')) || {};
         let loggedInUser = localStorage.getItem('loggedInUser') || null;
         let selectedGame = null;
         let publishedGames = JSON.parse(localStorage.getItem('publishedGames')) || [];
-        let predefinedGames = [
-            { name: '2D Game', html: '<h1>2D Game</h1><p>This is a 2D game template.</p>', publisher: 'Webblox' },
-            { name: '3D Game', html: '<h1>3D Game</h1><p>This is a 3D game template.</p>', publisher: 'Webblox' },
-            { name: 'Puzzle Game', html: '<h1>Puzzle Game</h1><p>This is a puzzle game template.</p>', publisher: 'Webblox' },
-            { name: 'Horror Game', html: '<h1>Horror Game</h1><p>This is a horror game template.</p>', publisher: 'Webblox' }
-        ];
         let friendRequests = JSON.parse(localStorage.getItem('friendRequests')) || {};
         let friends = JSON.parse(localStorage.getItem('friends')) || {};
         let messages = JSON.parse(localStorage.getItem('messages')) || {};
@@ -165,35 +143,45 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             if (loggedInUser) {
-                showElement('welcome-container');
+                document.getElementById('login-container').style.display = 'none';
                 document.getElementById('welcome-message').innerText = `Welcome to Webblox, ${loggedInUser}!`;
+                showElement('welcome-container');
             } else {
-                showLogin();
-            }
-
-            if (!localStorage.getItem('initialized')) {
-                publishedGames = predefinedGames;
-                localStorage.setItem('publishedGames', JSON.stringify(publishedGames));
-                localStorage.setItem('initialized', 'true');
+                document.getElementById('login-container').style.display = 'block';
             }
         });
+
+        function showLogin() {
+            document.getElementById('signup-container').style.display = 'none';
+            document.getElementById('login-container').style.display = 'block';
+        }
+
+        function showSignUp() {
+            document.getElementById('login-container').style.display = 'none';
+            document.getElementById('signup-container').style.display = 'block';
+        }
+
+        function enterAsGuest() {
+            loggedInUser = 'Guest';
+            localStorage.setItem('loggedInUser', 'Guest');
+            document.getElementById('login-container').style.display = 'none';
+            document.getElementById('welcome-message').innerText = 'Welcome to Webblox, Guest!';
+            showElement('welcome-container');
+        }
 
         function login() {
             const username = document.getElementById('login-username').value;
             const password = document.getElementById('login-password').value;
             const age = parseInt(document.getElementById('login-age').value, 10);
 
-            if (users[username] && users[username].password === password) {
-                if (age >= MIN_AGE) {
-                    loggedInUser = username;
-                    localStorage.setItem('loggedInUser', username);
-                    showElement('welcome-container');
-                    document.getElementById('welcome-message').innerText = `Welcome to Webblox, ${username}!`;
-                } else {
-                    alert('You must be at least 10 years old to play the game');
-                }
+            if (users[username] && users[username].password === password && age >= 10) {
+                loggedInUser = username;
+                localStorage.setItem('loggedInUser', username);
+                document.getElementById('login-container').style.display = 'none';
+                document.getElementById('welcome-message').innerText = `Welcome to Webblox, ${username}!`;
+                showElement('welcome-container');
             } else {
-                alert('Invalid username or password');
+                alert('Invalid username, password, or age (must be at least 10)');
             }
         }
 
@@ -202,7 +190,7 @@
             const password = document.getElementById('signup-password').value;
             const age = parseInt(document.getElementById('signup-age').value, 10);
 
-            if (username && password && age >= MIN_AGE) {
+            if (username && password && age >= 10) {
                 if (!users[username]) {
                     users[username] = { password, name: username, age, friends: [] };
                     localStorage.setItem('users', JSON.stringify(users));
@@ -216,61 +204,39 @@
             }
         }
 
-        function enterAsGuest() {
-            loggedInUser = 'Guest';
-            localStorage.setItem('loggedInUser', 'Guest');
-            showElement('welcome-container');
-            document.getElementById('welcome-message').innerText = 'Welcome to Webblox, Guest!';
-        }
-
         function openAccountSettings() {
             if (loggedInUser !== 'Guest') {
+                document.getElementById('welcome-container').style.display = 'none';
                 showElement('account-settings');
             } else {
-                alert('Guests cannot change account settings');
+                alert('Guests cannot access account settings');
             }
         }
 
         function updateAccountSettings() {
             const newName = document.getElementById('new-name').value;
-            const newAge = document.getElementById('new-age').value;
+            const newAge = parseInt(document.getElementById('new-age').value, 10);
             const newPassword = document.getElementById('new-password').value;
 
             if (loggedInUser && users[loggedInUser]) {
                 if (newName) users[loggedInUser].name = newName;
-                if (newAge) users[loggedInUser].age = newAge;
+                if (newAge >= 10) users[loggedInUser].age = newAge;
                 if (newPassword) users[loggedInUser].password = newPassword;
 
                 localStorage.setItem('users', JSON.stringify(users));
-                alert('Account settings updated successfully');
-                closeElement('account-settings');
+                alert('Account settings updated!');
             } else {
-                alert('No user is logged in');
+                alert('User not found');
             }
         }
 
         function openUploadContainer() {
             if (loggedInUser !== 'Guest') {
+                document.getElementById('welcome-container').style.display = 'none';
                 showElement('upload-container');
             } else {
                 alert('Guests cannot publish games');
             }
-        }
-
-        function sanitizeHTML(html) {
-            const template = document.createElement('template');
-            template.innerHTML = html;
-
-            const scripts = template.content.querySelectorAll('script');
-            scripts.forEach(script => script.remove());
-
-            const elementsWithEvents = template.content.querySelectorAll('*');
-            elementsWithEvents.forEach(element => {
-                element.removeAttribute('onload');
-                element.removeAttribute('onclick');
-            });
-
-            return template.innerHTML;
         }
 
         function publishGame() {
@@ -278,52 +244,80 @@
             const gameName = document.getElementById('game-name').value;
 
             if (gameHtml && gameName) {
-                const sanitizedHtml = sanitizeHTML(gameHtml);
-
-                publishedGames.push({ name: gameName, html: sanitizedHtml, publisher: loggedInUser });
+                publishedGames.push({ name: gameName, html: gameHtml });
                 localStorage.setItem('publishedGames', JSON.stringify(publishedGames));
-                alert('Game published successfully');
-                closeElement('upload-container');
+                alert('Game published successfully!');
+                closeUploadContainer();
             } else {
-                alert('Please provide both HTML content and a game name');
+                alert('Please enter game name and HTML code');
             }
         }
 
         function viewPublishedGames() {
-            showElement('published-games');
+            document.getElementById('welcome-container').style.display = 'none';
             const gamesList = document.getElementById('games-list');
             gamesList.innerHTML = '';
-            publishedGames.forEach(game => {
+            publishedGames.forEach((game, index) => {
                 const gameItem = document.createElement('div');
                 gameItem.className = 'game-item';
-                gameItem.innerHTML = `<strong>${game.name}</strong> <br> <em>by ${game.publisher}</em>`;
-                gameItem.onclick = () => {
-                    if (selectedGame) {
-                        selectedGame.classList.remove('selected');
-                    }
-                    selectedGame = gameItem;
-                    gameItem.classList.add('selected');
-                };
+                gameItem.innerText = game.name;
+                gameItem.onclick = () => selectGame(index);
                 gamesList.appendChild(gameItem);
             });
+            showElement('published-games');
+        }
+
+        function selectGame(index) {
+            selectedGame = publishedGames[index];
+            document.getElementById('game-title').innerText = selectedGame.name;
+            document.getElementById('game-content').innerHTML = selectedGame.html;
+            showElement('game-container');
         }
 
         function playSelectedGame() {
             if (selectedGame) {
-                const gameName = selectedGame.querySelector('strong').innerText;
-                const game = publishedGames.find(g => g.name === gameName);
-                if (game) {
-                    document.getElementById('game-title').innerText = game.name;
-                    document.getElementById('game-content').innerHTML = game.html;
-                    showElement('game-container');
-                }
+                document.getElementById('game-title').innerText = selectedGame.name;
+                document.getElementById('game-content').innerHTML = selectedGame.html;
+                showElement('game-container');
             } else {
-                alert('Select a game to play');
+                alert('No game selected');
             }
         }
 
+        function showElement(id) {
+            document.querySelectorAll('.container').forEach(container => {
+                container.style.display = 'none';
+            });
+            document.getElementById(id).style.display = 'flex';
+        }
+
+        function closeUploadContainer() {
+            document.getElementById('upload-container').style.display = 'none';
+            document.getElementById('welcome-container').style.display = 'flex';
+        }
+
+        function closePublishedGames() {
+            document.getElementById('published-games').style.display = 'none';
+            document.getElementById('welcome-container').style.display = 'flex';
+        }
+
+        function closePlayersContainer() {
+            document.getElementById('players-container').style.display = 'none';
+            document.getElementById('welcome-container').style.display = 'flex';
+        }
+
+        function closeChat() {
+            document.getElementById('chat-container').style.display = 'none';
+            document.getElementById('welcome-container').style.display = 'flex';
+        }
+
+        function closeGameContainer() {
+            document.getElementById('game-container').style.display = 'none';
+            document.getElementById('welcome-container').style.display = 'flex';
+        }
+
         function viewPlayers() {
-            showElement('players-container');
+            document.getElementById('welcome-container').style.display = 'none';
             const playersList = document.getElementById('players-list');
             playersList.innerHTML = '';
             Object.keys(users).forEach(username => {
@@ -331,142 +325,59 @@
                     const playerItem = document.createElement('div');
                     playerItem.className = 'player-item';
                     playerItem.innerText = username;
-                    playerItem.onclick = () => {
-                        if (playerItem.classList.contains('selected')) {
-                            playerItem.classList.remove('selected');
-                        } else {
-                            playerItem.classList.add('selected');
-                            if (confirm(`Send friend request to ${username}?`)) {
-                                sendFriendRequest(username);
-                            }
-                        }
-                    };
+                    playerItem.onclick = () => sendFriendRequest(username);
                     playersList.appendChild(playerItem);
                 }
             });
+            showElement('players-container');
         }
 
-        function sendFriendRequest(toUsername) {
-            if (!friendRequests[toUsername]) {
-                friendRequests[toUsername] = [];
+        function sendFriendRequest(username) {
+            if (loggedInUser && !friendRequests[username]) {
+                friendRequests[username] = true;
+                localStorage.setItem('friendRequests', JSON.stringify(friendRequests));
+                alert('Friend request sent!');
+            } else {
+                alert('You are already friends or the user does not exist');
             }
-            friendRequests[toUsername].push(loggedInUser);
-            localStorage.setItem('friendRequests', JSON.stringify(friendRequests));
-            alert('Friend request sent');
-        }
-
-        function viewFriendRequests() {
-            const friendRequestsList = document.getElementById('friend-requests-list');
-            friendRequestsList.innerHTML = '';
-            const requests = friendRequests[loggedInUser] || [];
-            requests.forEach(requester => {
-                const requestItem = document.createElement('div');
-                requestItem.className = 'request-item';
-                requestItem.innerText = requester;
-                requestItem.onclick = () => {
-                    if (confirm(`Accept friend request from ${requester}?`)) {
-                        acceptFriendRequest(requester);
-                    }
-                };
-                friendRequestsList.appendChild(requestItem);
-            });
-        }
-
-        function acceptFriendRequest(requester) {
-            if (!friends[loggedInUser]) {
-                friends[loggedInUser] = [];
-            }
-            if (!friends[requester]) {
-                friends[requester] = [];
-            }
-            friends[loggedInUser].push(requester);
-            friends[requester].push(loggedInUser);
-            localStorage.setItem('friends', JSON.stringify(friends));
-
-            friendRequests[loggedInUser] = friendRequests[loggedInUser].filter(req => req !== requester);
-            localStorage.setItem('friendRequests', JSON.stringify(friendRequests));
-            alert('Friend request accepted');
-        }
-
-        function viewFriends() {
-            const friendsList = document.getElementById('friends-list');
-            friendsList.innerHTML = '';
-            const userFriends = friends[loggedInUser] || [];
-            userFriends.forEach(friend => {
-                const friendItem = document.createElement('div');
-                friendItem.className = 'friend-item';
-                friendItem.innerText = friend;
-                friendItem.onclick = () => {
-                    selectedFriend = friend;
-                    document.getElementById('chat-friend').innerText = friend;
-                    loadChatMessages();
-                    showElement('chat-container');
-                };
-                friendsList.appendChild(friendItem);
-            });
-        }
-
-        function loadChatMessages() {
-            const chatMessages = document.getElementById('chat-messages');
-            chatMessages.innerHTML = '';
-            const friendMessages = messages[`${loggedInUser}-${selectedFriend}`] || [];
-            friendMessages.forEach(message => {
-                const messageItem = document.createElement('div');
-                messageItem.innerText = `${message.sender}: ${message.text}`;
-                chatMessages.appendChild(messageItem);
-            });
         }
 
         function sendMessage() {
-            const chatInput = document.getElementById('chat-input');
-            const messageText = chatInput.value;
-
-            if (messageText) {
-                if (!messages[`${loggedInUser}-${selectedFriend}`]) {
-                    messages[`${loggedInUser}-${selectedFriend}`] = [];
-                }
-                messages[`${loggedInUser}-${selectedFriend}`].push({ sender: loggedInUser, text: messageText });
+            const message = document.getElementById('chat-input').value;
+            if (message && selectedFriend) {
+                if (!messages[selectedFriend]) messages[selectedFriend] = [];
+                messages[selectedFriend].push({ from: loggedInUser, text: message });
                 localStorage.setItem('messages', JSON.stringify(messages));
-                loadChatMessages();
-                chatInput.value = '';
+                updateChat();
+                document.getElementById('chat-input').value = '';
             }
         }
 
-        function showElement(id) {
-            document.getElementById('login-container').classList.add('hidden');
-            document.getElementById('signup-container').classList.add('hidden');
-            document.getElementById('welcome-container').classList.add('hidden');
-            document.getElementById('account-settings').classList.add('hidden');
-            document.getElementById('upload-container').classList.add('hidden');
-            document.getElementById('published-games').classList.add('hidden');
-            document.getElementById('game-container').classList.add('hidden');
-            document.getElementById('players-container').classList.add('hidden');
-            document.getElementById('chat-container').classList.add('hidden');
-
-            document.getElementById(id).classList.remove('hidden');
+        function updateChat() {
+            const chatMessages = document.getElementById('chat-messages');
+            chatMessages.innerHTML = '';
+            if (selectedFriend && messages[selectedFriend]) {
+                messages[selectedFriend].forEach(msg => {
+                    const msgElement = document.createElement('div');
+                    msgElement.innerText = `${msg.from}: ${msg.text}`;
+                    chatMessages.appendChild(msgElement);
+                });
+            }
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        function closeElement(id) {
-            document.getElementById(id).classList.add('hidden');
-            showElement('welcome-container');
-        }
-
-        function closeGameContainer() {
-            closeElement('game-container');
-        }
-
-        function closePlayersContainer() {
-            closeElement('players-container');
-        }
-
-        function closeChat() {
-            closeElement('chat-container');
+        function openChat(friend) {
+            selectedFriend = friend;
+            document.getElementById('chat-friend').innerText = friend;
+            updateChat();
+            showElement('chat-container');
         }
 
         function logout() {
             loggedInUser = null;
             localStorage.removeItem('loggedInUser');
-            showLogin();
+            document.getElementById('welcome-container').style.display = 'none';
+            document.getElementById('login-container').style.display = 'block';
         }
     </script>
 </body>
