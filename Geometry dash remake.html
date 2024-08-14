@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geometry Dash Remade</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #222;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        #homeMenu, #levelList, #customizationMenu, #editorCanvas, #editorControls, #editorTools, #gameCanvas, #userLevelsList {
+            display: none;
+        }
+        #homeMenu, #levelList, #customizationMenu, #userLevelsList {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+        button {
+            background-color: #2196F3;
+            border: none;
+            padding: 10px 20px;
+            color: white;
+            font-size: 18px;
+            margin: 10px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #1976D2;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            margin: auto;
+            display: block;
+            background-color: #000;
+        }
+        #levelList {
+            overflow-y: auto;
+            max-height: 80vh;
+            width: 80%;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        #levelList ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            width: 100%;
+        }
+        #levelList li {
+            background-color: #333;
+            margin: 10px 0;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            text-align: center;
+        }
+        #levelList .levelTitle {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        #levelList .levelDifficulty {
+            color: #FF5722;
+        }
+        #userLevelsList {
+            overflow-y: auto;
+            max-height: 80vh;
+            width: 80%;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <div id="homeMenu">
+        <h1>Geometry Dash Remade</h1>
+        <button onclick="showLevelsMenu()">Play</button>
+        <button onclick="showCustomizationMenu()">Customize</button>
+        <button onclick="showEditorMenu()">Level Editor</button>
+        <button onclick="showUserLevelsMenu()">User Levels</button>
+    </div>
+
+    <div id="levelList">
+        <h2>Select a Level</h2>
+        <ul id="levelsContainer"></ul>
+        <button onclick="goHome()">Back</button>
+    </div>
+
+    <div id="customizationMenu">
+        <h2>Customize Your Character</h2>
+        <label for="shapeSelect">Shape:</label>
+        <select id="shapeSelect">
+            <option value="square">Square</option>
+            <option value="triangle">Triangle</option>
+        </select>
+        <label for="bodyColor">Body Color:</label>
+        <input type="color" id="bodyColor" value="#FFEB3B">
+        <label for="trailColor">Trail Color:</label>
+        <input type="color" id="trailColor" value="#FF5722">
+        <button onclick="saveCustomization()">Save</button>
+        <button onclick="goHome()">Back</button>
+    </div>
+
+    <canvas id="editorCanvas" width="800" height="400"></canvas>
+    <div id="editorControls">
+        <button onclick="resetEditor()">Reset</button>
+        <button onclick="saveLevel()">Save</button>
+        <button onclick="publishLevel()">Publish</button>
+        <button onclick="goHome()">Back</button>
+    </div>
+    <div id="editorTools">
+        <label for="elementSelect">Element:</label>
+        <select id="elementSelect">
+            <option value="obstacle">Obstacle</option>
+            <option value="spike">Spike</option>
+            <option value="end">End Marker</option>
+            <option value="decoration">Decoration</option>
+        </select>
+        <label for="elementColor">Color:</label>
+        <input type="color" id="elementColor" value="#FF5722">
+    </div>
+
+    <div id="userLevelsList">
+        <h2>User Created Levels</h2>
+        <ul id="userLevelsContainer"></ul>
+        <button onclick="goHome()">Back</button>
+    </div>
+
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+
+    <script>
+        let homeMenu = document.getElementById('homeMenu');
+        let levelList = document.getElementById('levelList');
+        let levelsContainer = document.getElementById('levelsContainer');
+        let editorCanvas = document.getElementById('editorCanvas');
+        let editorCtx = editorCanvas.getContext('2d');
+        let gameCanvas = document.getElementById('gameCanvas');
+        let ctx = gameCanvas.getContext('2d');
+        let customizationMenu = document.getElementById('customizationMenu');
+        let editorControls = document.getElementById('editorControls');
+        let editorTools = document.getElementById('editorTools');
+        let userLevelsList = document.getElementById('userLevelsList');
+        let userLevelsContainer = document.getElementById('userLevelsContainer');
+
+        let isPlaying = false;
+        let player = { x: 50, y: 300, width: 30, height: 30, velocityY: 0, jumpPower: -15, shape: 'square', bodyColor: '#FFEB3B', trailColor: '#FF5722', isJumping: false };
+
+        let obstacles = [];
+        let spikes = [];
+        let endMarkers = [];
+        let decorations = [];
+        let bgColor = '#000000';
+
+        let userCreatedLevels = [];
+
+        const preMadeLevels = [
+            {
+                name: 'Stereo Madness',
+                obstacles: [{ x: 400, y: 340, width: 50, height: 50 }],
+                spikes: [{ x: 300, y: 350, width: 30, height: 10 }],
+                endMarkers: [{ x: 750, y: 350, width: 60, height: 20 }],
+                decorations: [{ x: 350, y: 330, size: 20 }, { x: 500, y: 280, size: 20 }],
+                bgColor: '#4c4c4c',
+                difficulty: 'Easy'
+            },
+            {
+                name: 'Back on Track',
+                obstacles: [{ x: 300, y: 330, width: 50, height: 50 }],
+                spikes: [{ x: 300, y: 340, width: 30, height: 10 }],
+                endMarkers: [{ x: 700, y: 340, width: 60, height: 20 }],
+                decorations: [{ x: 350, y: 320, size: 20 }, { x: 500, y: 290, size: 20 }],
+                bgColor: '#5c5c5c',
+                difficulty: 'Medium'
+            },
+            {
+                name: 'Polargeist',
+                obstacles: [{ x: 250, y: 320, width: 50, height: 50 }, { x: 450, y: 320, width: 50, height: 50 }],
+                spikes: [{ x: 350, y: 350, width: 30, height: 10 }],
+                endMarkers: [{ x: 650, y: 340, width: 60, height: 20 }],
+                decorations: [{ x: 400, y: 310, size: 20 }, { x: 550, y: 280, size: 20 }],
+                bgColor: '#6c6c6c',
+                difficulty: 'Medium'
+            },
+            {
+                name: 'Dry Out',
+                obstacles: [{ x: 300, y: 300, width: 50, height: 50 }],
+                spikes: [{ x: 400, y: 350, width: 30, height: 10 }],
+                endMarkers: [{ x: 700, y: 340, width: 60, height: 20 }],
+                decorations: [{ x: 500, y: 290, size: 20 }],
+                bgColor: '#7c7c7c',
+                difficulty: 'Hard'
+            },
+            {
+                name: 'Base After Base',
+                obstacles: [{ x: 350, y: 280, width: 50, height: 50 }],
+                spikes: [{ x: 450, y: 350, width: 30, height: 10 }],
+                endMarkers: [{ x: 750, y: 330, width: 60, height: 20 }],
+                decorations: [{ x: 600, y: 270, size: 20 }],
+                bgColor: '#8c8c8c',
+                difficulty: 'Hard'
+            },
+            {
+                name: 'Cant Let Go',
+                obstacles: [{ x: 400, y: 290, width: 50, height: 50 }],
+                spikes: [{ x: 500, y: 350, width: 30, height: 10 }],
+                endMarkers: [{ x: 800, y: 320, width: 60, height: 20 }],
+                decorations: [{ x: 600, y: 280, size: 20 }],
+                bgColor: '#9c9c9c',
+                difficulty: 'Very Hard'
+            },
+            {
+                name: 'Jumper',
+                obstacles: [{ x: 450, y: 270, width: 50, height: 50 }],
+                spikes: [{ x: 550, y: 350, width: 30, height: 10 }],
+                endMarkers: [{ x: 850, y: 320, width: 60, height: 20 }],
+                decorations: [{ x: 650, y: 260, size: 20 }],
+                bgColor: '#acacac',
+                difficulty: 'Very Hard'
+            },
+            {
+                name: 'Clubstep',
+                obstacles: [{ x: 350, y: 280, width: 50, height: 50 }, { x: 500, y: 280, width: 50, height: 50 }],
+                spikes: [{ x: 450, y: 350, width: 30, height: 10 }, { x: 550, y: 360, width: 30, height: 10 }],
+                endMarkers: [{ x: 900, y: 320, width: 60, height: 20 }],
+                decorations: [{ x: 600, y: 270, size: 20 }, { x: 700, y: 280, size: 20 }],
+                bgColor: '#bc8c8c',
+                difficulty: 'Demon'
+            }
+        ];
+
+        function showLevelsMenu() {
+            homeMenu.style.display = 'none';
+            levelList.style.display = 'flex';
+            drawLevels();
+        }
+
+        function showCustomizationMenu() {
+            homeMenu.style.display = 'none';
+            customizationMenu.style.display = 'flex';
+        }
+
+        function showEditorMenu() {
+            homeMenu.style.display = 'none';
+            editorCanvas.style.display = 'block';
+            editorControls.style.display = 'flex';
+            editorTools.style.display = 'flex';
+            resetEditor();
+        }
+
+        function showUserLevelsMenu() {
+            homeMenu.style.display = 'none';
+            userLevelsList.style.display = 'flex';
+            drawUserLevels();
+        }
+
+        function saveCustomization() {
+            player.shape = document.getElementById('shapeSelect').value;
+            player.bodyColor = document.getElementById('bodyColor').value;
+            player.trailColor = document.getElementById('trailColor').value;
+            alert('Customization Saved!');
+            goHome();
+        }
+
+        function startGame(level) {
+            homeMenu.style.display = 'none';
+            levelList.style.display = 'none';
+            userLevelsList.style.display = 'none';
+            customizationMenu.style.display = 'none';
+            editorCanvas.style.display = 'none';
+            editorControls.style.display = 'none';
+            editorTools.style.display = 'none';
+            gameCanvas.style.display = 'block';
+            bgColor = level.bgColor;
+            obstacles = level.obstacles.map(obstacle => ({ ...obstacle }));
+            spikes = level.spikes.map(spike => ({ ...spike }));
+            endMarkers = level.endMarkers.map(endMarker => ({ ...endMarker }));
+            decorations = level.decorations.map(decoration => ({ ...decoration }));
+            player.x = 50;
+            player.y = gameCanvas.height - player.height - 20;
+            player.velocityY = 0;
+            isPlaying = true;
+            gameLoop();
+        }
+
+        function goHome() {
+            homeMenu.style.display = 'flex';
+            levelList.style.display = 'none';
+            editorCanvas.style.display = 'none';
+            customizationMenu.style.display = 'none';
+            editorControls.style.display = 'none';
+            editorTools.style.display = 'none';
+            userLevelsList.style.display = 'none';
+            gameCanvas.style.display = 'none';
+            isPlaying = false;
+        }
+
+        function drawEditor() {
+            editorCtx.fillStyle = '#000';
+            editorCtx.fillRect(0, 0, editorCanvas.width, editorCanvas.height);
+            editorCtx.fillStyle = player.bodyColor;
+            editorCtx.fillRect(player.x, player.y, player.width, player.height);
+
+            editorCtx.fillStyle = '#FF5722';
+            for (let obs of obstacles) {
+                editorCtx.fillRect(obs.x, editorCanvas.height - obs.y - obs.height, obs.width, obs.height);
+            }
+
+            editorCtx.fillStyle = '#f44336';
+            for (let spike of spikes) {
+                editorCtx.beginPath();
+                editorCtx.moveTo(spike.x, editorCanvas.height - spike.y);
+                editorCtx.lineTo(spike.x + spike.width / 2, editorCanvas.height - (spike.y + spike.height));
+                editorCtx.lineTo(spike.x + spike.width, editorCanvas.height - spike.y);
+                editorCtx.closePath();
+                editorCtx.fill();
+            }
+
+            editorCtx.fillStyle = '#8BC34A';
+            for (let endMarker of endMarkers) {
+                editorCtx.fillRect(endMarker.x, editorCanvas.height - endMarker.y - endMarker.height, endMarker.width, endMarker.height);
+            }
+
+            editorCtx.fillStyle = '#FFC107';
+            for (let deco of decorations) {
+                editorCtx.beginPath();
+                editorCtx.arc(deco.x, editorCanvas.height - deco.y, deco.size, 0, Math.PI * 2);
+                editorCtx.fill();
+            }
+        }
+
+        function drawLevels() {
+            levelsContainer.innerHTML = '';
+            preMadeLevels.forEach(level => {
+                const li = document.createElement('li');
+                li.innerHTML = `<div class="levelTitle">${level.name}</div><div class="levelDifficulty">Difficulty: ${level.difficulty}</div>`;
+                const startButton = document.createElement('button');
+                startButton.textContent = "Start Game";
+                startButton.onclick = () => startGame(level);
+                li.appendChild(startButton);
+                levelsContainer.appendChild(li);
+            });
+        }
+
+        function drawUserLevels() {
+            userLevelsContainer.innerHTML = '';
+            userCreatedLevels.forEach(level => {
+                const li = document.createElement('li');
+                li.innerHTML = `<div class="levelTitle">${level.name}</div><div class="levelDifficulty">Difficulty: ${level.difficulty}</div>`;
+                const startButton = document.createElement('button');
+                startButton.textContent = "Start Game";
+                startButton.onclick = () => startGame(level);
+                li.appendChild(startButton);
+                userLevelsContainer.appendChild(li);
+            });
+        }
+
+        function resetEditor() {
+            obstacles = [];
+            spikes = [];
+            endMarkers = [];
+            decorations = [];
+            drawEditor();
+        }
+
+        function saveLevel() {
+            const levelName = prompt('Enter level name:');
+            const difficulty = prompt('Enter difficulty (Easy, Medium, Hard, Very Hard, Demon):');
+            const newLevel = {
+                name: levelName,
+                obstacles: [...obstacles],
+                spikes: [...spikes],
+                endMarkers: [...endMarkers],
+                decorations: [...decorations],
+                bgColor: bgColor,
+                difficulty: difficulty
+            };
+            userCreatedLevels.push(newLevel);
+            alert('Level saved!');
+        }
+
+        function publishLevel() {
+            saveLevel(); // Save and then publish
+        }
+
+        function gameLoop() {
+            if (!isPlaying) return;
+
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
+            drawPlayer();
+            drawObstacles();
+            drawSpikes();
+            drawEndMarkers();
+            drawDecorations();
+
+            player.velocityY += 1.5;
+            player.y += player.velocityY;
+            if (player.y + player.height >= gameCanvas.height - 20) {
+                player.y = gameCanvas.height - player.height - 20;
+                player.velocityY = 0;
+                player.isJumping = false;
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function drawPlayer() {
+            ctx.fillStyle = player.bodyColor;
+            if (player.shape === 'triangle') {
+                ctx.beginPath();
+                ctx.moveTo(player.x, player.y);
+                ctx.lineTo(player.x + player.width / 2, player.y + player.height);
+                ctx.lineTo(player.x + player.width, player.y);
+                ctx.closePath();
+                ctx.fill();
+            } else {
+                ctx.fillRect(player.x, player.y, player.width, player.height);
+            }
+        }
+
+        function drawObstacles() {
+            ctx.fillStyle = '#FF5722';
+            for (let obs of obstacles) {
+                ctx.fillRect(obs.x, gameCanvas.height - 50 - obs.height, obs.width, obs.height);
+                obs.x -= 5;
+                if (player.x < obs.x + obs.width &&
+                    player.x + player.width > obs.x &&
+                    player.y + player.height > gameCanvas.height - 50 - obs.height) {
+                    isPlaying = false;
+                    alert('Game Over!');
+                    goHome();
+                }
+            }
+        }
+
+        function drawSpikes() {
+            ctx.fillStyle = '#f44336';
+            for (let spike of spikes) {
+                ctx.beginPath();
+                ctx.moveTo(spike.x, gameCanvas.height - 50);
+                ctx.lineTo(spike.x + spike.width / 2, gameCanvas.height - 50 - spike.height);
+                ctx.lineTo(spike.x + spike.width, gameCanvas.height - 50);
+                ctx.closePath();
+                ctx.fill();
+                spike.x -= 5;
+                if (player.x < spike.x + spike.width &&
+                    player.x + player.width > spike.x &&
+                    player.y + player.height > gameCanvas.height - 50 - spike.height) {
+                    isPlaying = false;
+                    alert('Game Over!');
+                    goHome();
+                }
+            }
+        }
+
+        function drawEndMarkers() {
+            ctx.fillStyle = '#8BC34A';
+            for (let endMarker of endMarkers) {
+                ctx.fillRect(endMarker.x, gameCanvas.height - 50 - endMarker.height, endMarker.width, endMarker.height);
+                endMarker.x -= 5;
+                if (player.x < endMarker.x + endMarker.width &&
+                    player.x + player.width > endMarker.x &&
+                    player.y + player.height > gameCanvas.height - 50 - endMarker.height) {
+                    isPlaying = false;
+                    alert('Level Complete!');
+                    goHome();
+                }
+            }
+        }
+
+        function drawDecorations() {
+            ctx.fillStyle = '#FFC107';
+            for (let deco of decorations) {
+                ctx.beginPath();
+                ctx.arc(deco.x, gameCanvas.height - 50 - deco.size, deco.size, 0, Math.PI * 2);
+                ctx.fill();
+                deco.x -= 5;
+            }
+        }
+
+        editorCanvas.addEventListener('click', function(event) {
+            const rect = editorCanvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+
+            const selectedElement = document.getElementById('elementSelect').value;
+            const color = document.getElementById('elementColor').value;
+
+            if (selectedElement === 'obstacle') {
+                obstacles.push({ x, y, width: 50, height: 50, color });
+            } else if (selectedElement === 'spike') {
+                spikes.push({ x, y, width: 30, height: 10 });
+            } else if (selectedElement === 'end') {
+                endMarkers.push({ x, y, width: 60, height: 20 });
+            } else if (selectedElement === 'decoration') {
+                decorations.push({ x, y, size: 20 });
+            }
+            drawEditor();
+        });
+
+        document.addEventListener('keydown', function(event) {
+            if (event.code === 'Space' && !player.isJumping) {
+                player.velocityY = player.jumpPower;
+                player.isJumping = true;
+            }
+        });
+
+    </script>
+</body>
+</html>
